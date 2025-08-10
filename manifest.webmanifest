@@ -1,21 +1,107 @@
 {
-  "name": "Morning Fat Loss",
-  "short_name": "Morning Fat Loss",
-  "description": "Nature-themed habit tracker with weekday-specific timeline, water tracking, and resources.",
-  "start_url": "./index.html",
+  "name": "Morning Fat Loss Tracker",
+  "short_name": "MFL Tracker",
+  "description": "Personal fitness tracking app for morning workouts, nutrition, and Sermorelin protocol",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f4f7f5",
   "theme_color": "#5a7f71",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "categories": ["health", "fitness", "lifestyle"],
+  "lang": "en-US",
+  "dir": "ltr",
   "icons": [
+    {
+      "src": "assets/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/mobile-today.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Today view showing daily schedule"
+    },
+    {
+      "src": "assets/screenshots/mobile-week.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Week view showing progress overview"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's Schedule",
+      "short_name": "Today",
+      "description": "View today's workout and meal schedule",
+      "url": "./?view=today",
+      "icons": [
+        {
+          "src": "assets/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Week Progress",
+      "short_name": "Week",
+      "description": "Check weekly progress and stats",
+      "url": "./?view=week",
+      "icons": [
+        {
+          "src": "assets/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }
