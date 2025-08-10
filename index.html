@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Morning Fat Loss</title>
+  <meta name="theme-color" content="#5a7f71" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Morning Fat Loss</h1>
+    <button id="editTimesBtn" class="linklike">Edit times</button>
+  </header>
+
+  <main id="view-today" class="view active">
+    <section class="streak">
+      <span id="dayLabel">Monday</span>
+      <span id="streakBadge">🔥 <span id="streakCount">0</span>-day streak</span>
+    </section>
+
+    <ul id="timeline" class="timeline"></ul>
+
+    <section class="water">
+      <h2>Water</h2>
+      <div id="waterDrops" class="drops"></div>
+    </section>
+  </main>
+
+  <main id="view-week" class="view">
+    <section class="week-grid" id="weekGrid"></section>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div id="progressFill"></div></div>
+      <button id="resetWeekBtn" class="linklike">Reset week</button>
+    </div>
+  </main>
+
+  <main id="view-resources" class="view">
+    <section class="card">
+      <h2>Workouts</h2>
+      <p>Full Body • Upper + Cardio • Lower + Cardio • HIIT + Core • HIIT</p>
+    </section>
+    <section class="card">
+      <h2>Meals & Snacks</h2>
+      <p>Protein snacks, breakfast (post-workout), lunch (moderate carbs), dinner (low carb).</p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-target="view-today" class="active">Today</button>
+    <button data-target="view-week">Week</button>
+    <button data-target="view-resources">Resources</button>
+  </nav>
+
+  <dialog id="timeEditor">
+    <form method="dialog">
+      <h3>Edit Times</h3>
+      <div id="timeForm"></div>
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button value="save" class="primary">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
