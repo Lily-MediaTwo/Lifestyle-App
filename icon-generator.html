@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f4f7f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .icon-preview {
+            width: 512px;
+            height: 512px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #5a7f71, #a8c8ba);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .icon-preview::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .icon-emoji {
+            font-size: 120px;
+            margin-bottom: 20px;
+            z-index: 2;
+            position: relative;
+        }
+        .icon-text {
+            font-size: 36px;
+            font-weight: 700;
+            z-index: 2;
+            position: relative;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .icon-subtitle {
+            font-size: 20px;
+            font-weight: 400;
+            opacity: 0.9;
+            z-index: 2;
+            position: relative;
+            margin-top: 8px;
+        }
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .download-btn {
+            background: #5a7f71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+        .download-btn:hover {
+            background: #4a6b5f;
+            transform: translateY(-1px);
+        }
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .size-preview {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .size-preview canvas {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .size-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 PWA Icon Generator</h1>
+        <p>Generate all the icon sizes needed for your Morning Fat Loss PWA</p>
+        
+        <div class="icon-preview" id="iconPreview">
+            <div class="icon-emoji">🔥</div>
+            <div class="icon-text">MFL</div>
+            <div class="icon-subtitle">Tracker</div>
+        </div>
+
+        <div class="download-section">
+            <button class="download-btn" onclick="downloadAllIcons()">📦 Download All Icons</button>
+            <button class="download-btn" onclick="downloadZip()">📁 Download as ZIP</button>
+        </div>
+
+        <div class="size-grid" id="sizeGrid"></div>
+
+        <div class="instructions">
+            <h3>📋 Setup Instructions</h3>
+            <ol>
+                <li>Click "Download All Icons" to get all required sizes</li>
+                <li>Create a folder structure in your project: <code>assets/icons/</code></li>
+                <li>Place all downloaded PNG files in the <code>assets/icons/</code> folder</li>
+                <li>Make sure the filenames match exactly: <code>icon-72.png</code>, <code>icon-96.png</code>, etc.</li>
+                <li>The manifest.webmanifest and service-worker.js files are already configured to use these icons</li>
+            </ol>
+            <p><strong>Required folder structure:</strong></p>
+            <pre>your-app/
+├── index.html
+├── manifest.webmanifest
+├── service-worker.js
+└── assets/
+    └── icons/
+        ├── icon-72.png
+        ├── icon-96.png
+        ├── icon-128.png
+        ├── icon-144.png
+        ├── icon-152.png
+        ├── icon-192.png
+        ├── icon-384.png
+        └── icon-512.png</pre>
+        </div>
+    </div>
+
+    <script>
+        const ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#5a7f71');
+            gradient.addColorStop(1, '#a8c8ba');
+            
+            // Draw rounded rectangle background
+            const radius = size * 0.15;
+            ctx.fillStyle = gradient;
+            drawRoundedRect(ctx, 0, 0, size, size, radius);
+            ctx.fill();
+
+            // Add subtle shine effect
+            const shineGradient = ctx.createRadialGradient(size/3, size/3, 0, size/3, size/3, size);
+            shineGradient.addColorStop(0, 'rgba(255,255,255,0.3)');
+            shineGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shineGradient;
+            drawRoundedRect(ctx, 0, 0, size, size, radius);
+            ctx.fill();
+
+            // Draw fire emoji
+            ctx.font = `${size * 0.35}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🔥', size/2, size * 0.35);
+
+            // Draw "MFL" text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.2}px Arial`;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = size * 0.01;
+            ctx.shadowOffsetY = size * 0.005;
+            ctx.fillText('MFL', size/2, size * 0.7);
+
+            // Draw "Tracker" subtitle
+            ctx.font = `${size * 0.1}px Arial`;
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fillText('Tracker', size/2, size * 0.85);
+
+            return canvas;
+        }
+
+        function drawRoundedRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function generateSizePreviews() {
+            const sizeGrid = document.getElementById('sizeGrid');
+            
+            ICON_SIZES.forEach(size => {
+                const canvas = createIcon(size);
+                const preview = document.createElement('div');
+                preview.className = 'size-preview';
+                
+                // Scale down for preview
+                const previewSize = Math.min(size, 80);
+                canvas.style.width = previewSize + 'px';
+                canvas.style.height = previewSize + 'px';
+                
+                preview.appendChild(canvas);
+                preview.innerHTML += `<div class="size-label">${size}×${size}</div>`;
+                sizeGrid.appendChild(preview);
+            });
+        }
+
+        function downloadAllIcons() {
+            ICON_SIZES.forEach(size => {
+                const canvas = createIcon(size);
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+            });
+        }
+
+        async function downloadZip() {
+            // Simple zip creation (requires JSZip library)
+            const zip = new JSZip();
+            
+            for (const size of ICON_SIZES) {
+                const canvas = createIcon(size);
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                zip.file(`icon-${size}.png`, blob);
+            }
+            
+            const zipBlob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mfl-icons.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        generateSizePreviews();
+
+        // Add JSZip library for zip download functionality
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
