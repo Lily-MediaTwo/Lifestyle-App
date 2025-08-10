@@ -1,71 +1,59 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Morning Fat Loss</title>
-  <meta name="theme-color" content="#5a7f71" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="app-header">
-    <h1>Morning Fat Loss</h1>
-    <button id="editTimesBtn" class="linklike">Edit times</button>
-  </header>
-
-  <main id="view-today" class="view active">
-    <section class="streak">
-      <span id="dayLabel">Monday</span>
-      <span id="streakBadge">🔥 <span id="streakCount">0</span>-day streak</span>
-    </section>
-
-    <ul id="timeline" class="timeline"></ul>
-
-    <section class="water">
-      <h2>Water</h2>
-      <div id="waterDrops" class="drops"></div>
-    </section>
-  </main>
-
-  <main id="view-week" class="view">
-    <section class="week-grid" id="weekGrid"></section>
-    <div class="progress-wrap">
-      <div class="progress-bar"><div id="progressFill"></div></div>
-      <button id="resetWeekBtn" class="linklike">Reset week</button>
-    </div>
-  </main>
-
-  <main id="view-resources" class="view">
-    <section class="card">
-      <h2>Workouts</h2>
-      <p>Full Body • Upper + Cardio • Lower + Cardio • HIIT + Core • HIIT</p>
-    </section>
-    <section class="card">
-      <h2>Meals & Snacks</h2>
-      <p>Protein snacks, breakfast (post-workout), lunch (moderate carbs), dinner (low carb).</p>
-    </section>
-  </main>
-
-  <nav class="tabbar">
-    <button data-target="view-today" class="active">Today</button>
-    <button data-target="view-week">Week</button>
-    <button data-target="view-resources">Resources</button>
-  </nav>
-
-  <dialog id="timeEditor">
-    <form method="dialog">
-      <h3>Edit Times</h3>
-      <div id="timeForm"></div>
-      <menu>
-        <button value="cancel">Cancel</button>
-        <button value="save" class="primary">Save</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <script src="app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Morning Fat Loss</title><meta name="theme-color" content="#5a7f71"/>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="stylesheet" href="styles.css"></head><body>
+<header class="app-header"><h1>Morning Fat Loss</h1><button id="editTimesBtn" class="linklike">Edit times</button></header>
+<main id="view-today" class="view active"><section class="streak">
+<span id="dayLabel">Monday</span><span id="planLabel" class="muted"></span>
+<span id="streakBadge">🔥 <span id="streakCount">0</span>-day streak</span></section>
+<ul id="timeline" class="timeline"></ul>
+<section class="water"><h2>Water</h2><div id="waterDrops" class="drops"></div></section></main>
+<main id="view-week" class="view"><section class="week-grid" id="weekGrid"></section>
+<div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div>
+<button id="resetWeekBtn" class="linklike">Reset week</button></div></main>
+<main id="view-resources" class="view">
+<section class="card"><h2>SECTION 1 – 4-Week Morning Fat Loss Calendar</h2>
+<p>You’ll have check boxes for: Dose ✔, Workout ✔, Cardio ✔, Nutrition ✔ each day.</p>
+<p><strong>Legend:</strong> 🏋 Strength • ⚡ HIIT • 🚶 Active Recovery • ❌ Rest</p>
+<div class="table">
+<div class="row head"><div>Day</div><div>Training</div><div>Sermorelin</div><div>Cardio</div><div>Nutrition Focus</div></div>
+<div class="row"><div>Mon 🏋</div><div>Full Body Strength</div><div>✔</div><div>—</div><div>Mod carbs post‑workout</div></div>
+<div class="row"><div>Tue ⚡</div><div>HIIT + Core</div><div>✔</div><div>—</div><div>Low carb PM</div></div>
+<div class="row"><div>Wed 🏋</div><div>Upper Strength + Cardio</div><div>✔</div><div>20 min steady</div><div>Mod carbs post‑workout</div></div>
+<div class="row"><div>Thu ⚡</div><div>HIIT</div><div>✔</div><div>—</div><div>Low carb PM</div></div>
+<div class="row"><div>Fri 🏋</div><div>Lower Strength + Cardio</div><div>✔</div><div>20–30 min steady</div><div>Mod carbs post‑workout</div></div>
+<div class="row"><div>Sat 🚶</div><div>Active Recovery</div><div>❌</div><div>Fasted walk</div><div>Low carb day</div></div>
+<div class="row"><div>Sun ❌</div><div>Rest</div><div>❌</div><div>Light walk optional</div><div>Low carb day</div></div>
+</div></section>
+<section class="card"><h2>SECTION 2 – Detailed Workouts (With Alternatives)</h2>
+<h3>MONDAY – Full Body Strength</h3><p><em>Main Routine (3 sets each, 8–12 reps, 60–90 sec rest)</em></p>
+<ul><li>Barbell Back Squat → alt: Dumbbell Goblet Squat</li><li>Bench Press → alt: Dumbbell Chest Press</li><li>Bent-Over Barbell Row → alt: One-Arm Dumbbell Row</li><li>Seated Overhead Press → alt: Arnold Press</li><li>Romanian Deadlift → alt: Kettlebell Deadlift</li><li>Plank (3×30–60 sec) → alt: Dead Bug</li></ul>
+<h3>TUESDAY – HIIT + Core</h3><p><em>HIIT (15–20 min)</em></p><ul><li>20 sec all-out sprint (bike/treadmill/rower) → 40 sec rest × 8–10</li></ul>
+<p><em>Core Finisher (3 rounds)</em></p><ul><li>Hanging Knee Raises × 12 → alt: Lying Leg Raise</li><li>Russian Twists × 20 (10/side) → alt: Cable Woodchop</li><li>Side Plank × 30 sec/side</li></ul>
+<h3>WEDNESDAY – Upper Strength + Cardio</h3><p><em>Strength (3×8–12)</em></p>
+<ul><li>Pull-Ups or Assisted Pull-Up → alt: Lat Pulldown</li><li>Incline Dumbbell Press → alt: Barbell Incline Press</li><li>Barbell Row → alt: Single-Arm Row</li><li>Dumbbell Lateral Raise → alt: Cable Lateral Raise</li><li>Tricep Dips → alt: Cable Rope Pushdown</li><li>Bicep Curl → alt: Hammer Curl</li></ul>
+<p><em>Cardio – 20 min steady pace after lifting</em></p>
+<h3>THURSDAY – HIIT</h3><ul><li>30 sec high-intensity battle ropes → 30 sec rest × 10 rounds</li><li><strong>or</strong> Sprint Intervals: 15 sec all-out / 45 sec walk × 10 rounds</li></ul>
+<h3>FRIDAY – Lower Strength + Cardio</h3><p><em>Strength (3×8–12)</em></p>
+<ul><li>Deadlift → alt: Trap Bar Deadlift</li><li>Walking Lunges (per leg) → alt: Step-Ups</li><li>Hip Thrusts → alt: Glute Bridge</li><li>Bulgarian Split Squat → alt: Goblet Squat</li><li>Standing Calf Raise → alt: Seated Calf Raise</li></ul>
+<p><em>Cardio – 20–30 min steady pace after lifting</em></p>
+<h3>SATURDAY – Active Recovery</h3><ul><li>20–30 min fasted walk or yoga/stretching</li><li>Focus on mobility and recovery</li></ul>
+</section>
+<section class="card"><h2>SECTION 3 – Nutrition & Snack Options</h2>
+<h3>Protein Snack Options</h3>
+<ul><li>Whey isolate (110–130 cal, 25g protein) with water or unsweetened almond milk</li><li>Greek yogurt (150g, 100 cal, 18g protein) + cinnamon</li><li>Cottage cheese (½ cup, 90 cal, 14g protein) with berries</li><li>Turkey or chicken slices with mustard</li><li>Hard-boiled eggs (add hot sauce or spices)</li><li>Protein bars (aim for 18–22g protein, &lt;8g sugar)</li></ul>
+<h3>Breakfast Ideas (post‑workout small carbs)</h3>
+<ul><li>2 eggs + 3 egg whites + ½ banana</li><li>Protein shake + small handful of berries</li><li>Greek yogurt + chia seeds + blueberries</li></ul>
+<h3>Lunch Ideas (moderate carbs)</h3>
+<ul><li>Chicken breast + quinoa + roasted veggies</li><li>Salmon + sweet potato + spinach</li><li>Lean ground turkey + brown rice + broccoli</li></ul>
+<h3>Dinner Ideas (low carb, protein + fats)</h3>
+<ul><li>Grilled chicken + asparagus + olive oil</li><li>White fish + zucchini noodles + pesto</li><li>Lean steak + roasted Brussels sprouts</li></ul>
+</section></main>
+<nav class="tabbar"><button data-target="view-today" class="active">Today</button>
+<button data-target="view-week">Week</button><button data-target="view-resources">Resources</button></nav>
+<dialog id="timeEditor"><form method="dialog"><h3>Edit Times</h3><div id="timeForm"></div>
+<menu><button value="cancel">Cancel</button><button value="save" class="primary">Save</button></menu></form></dialog>
+<script src="app.js"></script></body></html>
