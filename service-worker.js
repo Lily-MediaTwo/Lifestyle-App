@@ -1,5 +1,5 @@
 
-const CACHE='mfl-v23-cache';
+const CACHE='mfl-v23b-cache';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim())});
