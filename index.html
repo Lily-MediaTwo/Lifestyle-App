@@ -95,6 +95,8 @@
       .row{grid-template-columns: 90px 1fr; }
       .row div:nth-child(n+3){display:none}
     }
+  .today-highlight{outline:2px solid color-mix(in oklab, var(--accent) 60%, white); border-radius:12px; box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 12%, transparent) inset}
+    .today-chip{box-shadow:0 0 0 2px color-mix(in oklab, var(--accent) 50%, white)}
   </style>
 </head>
 <body>
@@ -135,7 +137,7 @@
   </main>
 
   <!-- Week View -->
-  <main id="view-week" class="view" hidden>
+  <main id="view-week" class="view">
     <div class="stats-grid" aria-label="Weekly stats">
       <div class="card stat-card"><div class="stat-number" id="weekCompleted">0</div><div class="muted">Days Completed</div></div>
       <div class="card stat-card"><div class="stat-number" id="weekPercentage">0%</div><div class="muted">Week Progress</div></div>
@@ -149,7 +151,7 @@
   </main>
 
   <!-- Resources -->
-  <main id="view-resources" class="view" hidden>
+  <main id="view-resources" class="view">
     <section class="card resource-section">
       <h2>SECTION 1 – 4-Week Morning Fat Loss Calendar</h2>
       <p>You’ll have check boxes for: Dose ✔, Workout ✔, Cardio ✔, Nutrition ✔ each day.</p>
@@ -444,6 +446,7 @@
         const pct = Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
 
         const row=document.createElement('li'); row.className='card';
+        if(new Date().toDateString()===d.toDateString()){ row.classList.add('today-highlight'); }
         row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div><strong>${DAY_NAMES[dow]}</strong> • ${ICONS[plan.workoutType]} ${plan.type} • ${plan.dose?'Dose':'No dose'}</div>
           <div style="min-width:46px;text-align:right"><strong>${Math.round(pct*100)}%</strong></div>
@@ -451,7 +454,8 @@
         <div class="progress-bar"><div class="progress-fill" style="width:${(pct*100).toFixed(0)}%"></div></div>`;
         weekOverview.append(row);
 
-        const sched=document.createElement('div'); sched.className='card'; sched.innerHTML=`<h3 style="margin:0 0 6px">${DAY_NAMES[dow]} – ${plan.type}</h3>`;
+        const sched=document.createElement('div'); sched.className='card';
+        if(new Date().toDateString()===d.toDateString()){ sched.classList.add('today-highlight'); } sched.innerHTML=`<h3 style="margin:0 0 6px">${DAY_NAMES[dow]} – ${plan.type}</h3>`;
         plan.schedule.forEach(item=>{
           const line=document.createElement('div'); line.className='muted'; line.style.margin='2px 0';
           line.textContent = `${toHuman(item.time)} • ${item.title}`;
@@ -484,13 +488,18 @@
       setTimeout(()=>{ renderAll(); renderWeek(); scheduleMidnight(); }, tomorrow.getTime()-now.getTime());
     }
 
-    // Navigation
+    // Navigation (class-based)
     document.querySelectorAll('.tabbar button').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        document.querySelectorAll('.view').forEach(v=>v.hidden=true);
-        document.getElementById(btn.dataset.target).hidden=false;
+        // switch active tab
         document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
+        // switch active view
+        document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+        const target = document.getElementById(btn.dataset.target);
+        if(target){ target.classList.add('active'); }
+        // scroll to top for better context
+        window.scrollTo({top:0, behavior:'smooth'});
         if(btn.dataset.target==='view-week'){ renderWeek(); }
       });
     });
@@ -505,9 +514,10 @@
     });
 
     function setPickerToToday(){
+      // add subtle ring on today's chip
       const dow=new Date().getDay();
       const chip=document.querySelector(`.chip[data-day="${dow}"]`);
-      if(chip){ chip.setAttribute('aria-pressed','true'); }
+      if(chip){ chip.setAttribute('aria-pressed','true'); chip.classList.add('today-chip'); }
     }
 
     function renderAll(){
