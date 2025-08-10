@@ -1,59 +1,666 @@
-<!doctype html><html lang="en"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Morning Fat Loss</title><meta name="theme-color" content="#5a7f71"/>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
-<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
-<link rel="stylesheet" href="styles.css"></head><body>
-<header class="app-header"><h1>Morning Fat Loss</h1><button id="editTimesBtn" class="linklike">Edit times</button></header>
-<main id="view-today" class="view active"><section class="streak">
-<span id="dayLabel">Monday</span><span id="planLabel" class="muted"></span>
-<span id="streakBadge">🔥 <span id="streakCount">0</span>-day streak</span></section>
-<ul id="timeline" class="timeline"></ul>
-<section class="water"><h2>Water</h2><div id="waterDrops" class="drops"></div></section></main>
-<main id="view-week" class="view"><section class="week-grid" id="weekGrid"></section>
-<div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div>
-<button id="resetWeekBtn" class="linklike">Reset week</button></div></main>
-<main id="view-resources" class="view">
-<section class="card"><h2>SECTION 1 – 4-Week Morning Fat Loss Calendar</h2>
-<p>You’ll have check boxes for: Dose ✔, Workout ✔, Cardio ✔, Nutrition ✔ each day.</p>
-<p><strong>Legend:</strong> 🏋 Strength • ⚡ HIIT • 🚶 Active Recovery • ❌ Rest</p>
-<div class="table">
-<div class="row head"><div>Day</div><div>Training</div><div>Sermorelin</div><div>Cardio</div><div>Nutrition Focus</div></div>
-<div class="row"><div>Mon 🏋</div><div>Full Body Strength</div><div>✔</div><div>—</div><div>Mod carbs post‑workout</div></div>
-<div class="row"><div>Tue ⚡</div><div>HIIT + Core</div><div>✔</div><div>—</div><div>Low carb PM</div></div>
-<div class="row"><div>Wed 🏋</div><div>Upper Strength + Cardio</div><div>✔</div><div>20 min steady</div><div>Mod carbs post‑workout</div></div>
-<div class="row"><div>Thu ⚡</div><div>HIIT</div><div>✔</div><div>—</div><div>Low carb PM</div></div>
-<div class="row"><div>Fri 🏋</div><div>Lower Strength + Cardio</div><div>✔</div><div>20–30 min steady</div><div>Mod carbs post‑workout</div></div>
-<div class="row"><div>Sat 🚶</div><div>Active Recovery</div><div>❌</div><div>Fasted walk</div><div>Low carb day</div></div>
-<div class="row"><div>Sun ❌</div><div>Rest</div><div>❌</div><div>Light walk optional</div><div>Low carb day</div></div>
-</div></section>
-<section class="card"><h2>SECTION 2 – Detailed Workouts (With Alternatives)</h2>
-<h3>MONDAY – Full Body Strength</h3><p><em>Main Routine (3 sets each, 8–12 reps, 60–90 sec rest)</em></p>
-<ul><li>Barbell Back Squat → alt: Dumbbell Goblet Squat</li><li>Bench Press → alt: Dumbbell Chest Press</li><li>Bent-Over Barbell Row → alt: One-Arm Dumbbell Row</li><li>Seated Overhead Press → alt: Arnold Press</li><li>Romanian Deadlift → alt: Kettlebell Deadlift</li><li>Plank (3×30–60 sec) → alt: Dead Bug</li></ul>
-<h3>TUESDAY – HIIT + Core</h3><p><em>HIIT (15–20 min)</em></p><ul><li>20 sec all-out sprint (bike/treadmill/rower) → 40 sec rest × 8–10</li></ul>
-<p><em>Core Finisher (3 rounds)</em></p><ul><li>Hanging Knee Raises × 12 → alt: Lying Leg Raise</li><li>Russian Twists × 20 (10/side) → alt: Cable Woodchop</li><li>Side Plank × 30 sec/side</li></ul>
-<h3>WEDNESDAY – Upper Strength + Cardio</h3><p><em>Strength (3×8–12)</em></p>
-<ul><li>Pull-Ups or Assisted Pull-Up → alt: Lat Pulldown</li><li>Incline Dumbbell Press → alt: Barbell Incline Press</li><li>Barbell Row → alt: Single-Arm Row</li><li>Dumbbell Lateral Raise → alt: Cable Lateral Raise</li><li>Tricep Dips → alt: Cable Rope Pushdown</li><li>Bicep Curl → alt: Hammer Curl</li></ul>
-<p><em>Cardio – 20 min steady pace after lifting</em></p>
-<h3>THURSDAY – HIIT</h3><ul><li>30 sec high-intensity battle ropes → 30 sec rest × 10 rounds</li><li><strong>or</strong> Sprint Intervals: 15 sec all-out / 45 sec walk × 10 rounds</li></ul>
-<h3>FRIDAY – Lower Strength + Cardio</h3><p><em>Strength (3×8–12)</em></p>
-<ul><li>Deadlift → alt: Trap Bar Deadlift</li><li>Walking Lunges (per leg) → alt: Step-Ups</li><li>Hip Thrusts → alt: Glute Bridge</li><li>Bulgarian Split Squat → alt: Goblet Squat</li><li>Standing Calf Raise → alt: Seated Calf Raise</li></ul>
-<p><em>Cardio – 20–30 min steady pace after lifting</em></p>
-<h3>SATURDAY – Active Recovery</h3><ul><li>20–30 min fasted walk or yoga/stretching</li><li>Focus on mobility and recovery</li></ul>
-</section>
-<section class="card"><h2>SECTION 3 – Nutrition & Snack Options</h2>
-<h3>Protein Snack Options</h3>
-<ul><li>Whey isolate (110–130 cal, 25g protein) with water or unsweetened almond milk</li><li>Greek yogurt (150g, 100 cal, 18g protein) + cinnamon</li><li>Cottage cheese (½ cup, 90 cal, 14g protein) with berries</li><li>Turkey or chicken slices with mustard</li><li>Hard-boiled eggs (add hot sauce or spices)</li><li>Protein bars (aim for 18–22g protein, &lt;8g sugar)</li></ul>
-<h3>Breakfast Ideas (post‑workout small carbs)</h3>
-<ul><li>2 eggs + 3 egg whites + ½ banana</li><li>Protein shake + small handful of berries</li><li>Greek yogurt + chia seeds + blueberries</li></ul>
-<h3>Lunch Ideas (moderate carbs)</h3>
-<ul><li>Chicken breast + quinoa + roasted veggies</li><li>Salmon + sweet potato + spinach</li><li>Lean ground turkey + brown rice + broccoli</li></ul>
-<h3>Dinner Ideas (low carb, protein + fats)</h3>
-<ul><li>Grilled chicken + asparagus + olive oil</li><li>White fish + zucchini noodles + pesto</li><li>Lean steak + roasted Brussels sprouts</li></ul>
-</section></main>
-<nav class="tabbar"><button data-target="view-today" class="active">Today</button>
-<button data-target="view-week">Week</button><button data-target="view-resources">Resources</button></nav>
-<dialog id="timeEditor"><form method="dialog"><h3>Edit Times</h3><div id="timeForm"></div>
-<menu><button value="cancel">Cancel</button><button value="save" class="primary">Save</button></menu></form></dialog>
-<script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Morning Fat Loss Tracker</title>
+  <meta name="theme-color" content="#5a7f71" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root{--bg:#f4f7f5;--card:#e7efe9;--accent:#5a7f71;--drop:#a8c8ba;--ink:#22302a;--muted:#5b6b64;--white:#fff;--success:#4ade80;--warning:#f59e0b;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+    .app-header{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:linear-gradient(180deg,var(--card),rgba(231,239,233,.4));border-bottom:1px solid rgba(0,0,0,.06);z-index:100}
+    h1{margin:0;font-size:1.25rem}
+    h2{margin:0 0 12px 0;color:var(--accent);font-size:1.1rem}
+    h3{margin:0 0 8px 0;font-size:1rem}
+    .linklike{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline}
+    .primary{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer}
+    .view{display:none;padding:12px 12px 72px}.view.active{display:block}
+    .day-header{display:flex;justify-content:space-between;align-items:center;margin:8px 4px 16px;padding:12px;background:var(--card);border-radius:12px;border:1px solid rgba(0,0,0,.05)}
+    .day-info{display:flex;flex-direction:column;gap:4px}
+    .day-name{font-size:1.1rem;font-weight:700;color:var(--accent)}
+    .day-type{font-size:0.9rem;color:var(--muted)}
+    .streak{font-size:0.9rem;color:var(--accent);font-weight:600}
+    .timeline{list-style:none;padding:0;margin:0}
+    .card,.timeline li{background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:14px;padding:14px;margin:10px 4px}
+    .task{display:grid;grid-template-columns:32px 1fr;align-items:start;gap:12px}
+    .task input[type="checkbox"]{width:24px;height:24px;accent-color:var(--accent);margin-top:2px}
+    .task-content{min-width:0}
+    .task-time{font-weight:700;color:var(--accent);font-size:0.95rem;margin-bottom:4px}
+    .task-title{font-weight:600;margin-bottom:4px}
+    .task-note{color:var(--muted);font-size:0.9rem;line-height:1.4}
+    .task-details{margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)}
+    .workout-details{background:rgba(90,127,113,.08);padding:10px;border-radius:8px;margin-top:8px}
+    .exercise-list{margin:6px 0;font-size:0.85rem;line-height:1.4}
+    .meal-options{background:rgba(168,200,186,.15);padding:8px;border-radius:6px;font-size:0.85rem;margin-top:6px}
+    .water{margin:20px 4px}
+    .water-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .water-count{color:var(--muted);font-size:0.9rem}
+    .drops{display:flex;gap:6px;flex-wrap:wrap}
+    .drop{width:24px;height:32px;border-radius:12px;background:rgba(168,200,186,.2);border:1px solid rgba(0,0,0,.08);cursor:pointer;transition:all 0.2s ease}
+    .drop.filled{background:var(--drop);transform:scale(1.05)}
+    .drop::after{content:"";position:absolute;top:6px;left:8px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.9)}
+    .week-overview{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
+    .week-day{background:var(--card);border-radius:10px;padding:12px 8px;text-align:center;border:1px solid rgba(0,0,0,.05)}
+    .week-day-name{font-size:0.75rem;color:var(--muted);margin-bottom:6px}
+    .week-day-progress{font-size:0.7rem;margin-top:6px}
+    .progress-circle{width:32px;height:32px;border-radius:50%;background:rgba(168,200,186,.2);display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:700;color:var(--accent)}
+    .progress-circle.complete{background:var(--success);color:white}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+    .stat-card{background:var(--card);border-radius:12px;padding:16px;text-align:center;border:1px solid rgba(0,0,0,.05)}
+    .stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);display:block}
+    .stat-label{font-size:0.8rem;color:var(--muted);margin-top:4px}
+    .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid rgba(0,0,0,.06);z-index:100}
+    .tabbar button{flex:1;padding:14px 8px;background:none;border:none;color:var(--muted);font-weight:600;font-size:0.8rem}
+    .tabbar button.active{color:var(--accent)}
+    .workout-type{display:inline-block;background:var(--accent);color:white;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;margin-bottom:6px}
+    .dose-indicator{color:var(--success);font-weight:600;font-size:0.8rem}
+    .no-dose{color:var(--warning);font-weight:600;font-size:0.8rem}
+    .resource-section{margin-bottom:24px}
+    .exercise-group{margin-bottom:16px}
+    .exercise-group h4{margin:0 0 8px 0;color:var(--accent);font-size:0.9rem}
+    .exercise-item{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:0.85rem}
+    .exercise-item:last-child{border-bottom:none}
+    .alternative{color:var(--muted);font-size:0.8rem;margin-left:12px}
+    .meal-category{margin-bottom:16px}
+    .meal-list{list-style:none;padding:0;margin:8px 0}
+    .meal-list li{padding:6px 0;font-size:0.85rem;border-bottom:1px solid rgba(0,0,0,.04)}
+    .meal-list li:last-child{border-bottom:none}
+    .reset-btn{background:var(--warning);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;margin-top:12px}
+    .progress-bar{width:100%;height:8px;background:#dfe9e3;border-radius:4px;overflow:hidden;margin:8px 0}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 0.3s ease}
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>🔥 Morning Fat Loss</h1>
+    <span id="weekLabel">Week 1</span>
+  </header>
+
+  <!-- Today View -->
+  <main id="view-today" class="view active">
+    <div class="day-header">
+      <div class="day-info">
+        <div class="day-name" id="dayName">Monday</div>
+        <div class="day-type" id="dayType">Full Body Strength + Sermorelin</div>
+      </div>
+      <div class="streak">🔥 <span id="streakCount">0</span> day streak</div>
+    </div>
+
+    <ul id="timeline" class="timeline"></ul>
+
+    <section class="water">
+      <div class="water-header">
+        <h2>💧 Hydration</h2>
+        <div class="water-count"><span id="waterCurrent">0</span>/8 glasses</div>
+      </div>
+      <div id="waterDrops" class="drops"></div>
+      <div class="progress-bar">
+        <div id="waterProgress" class="progress-fill" style="width:0%"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Week View -->
+  <main id="view-week" class="view">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number" id="weekCompleted">0</span>
+        <div class="stat-label">Days Completed</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="weekPercentage">0%</span>
+        <div class="stat-label">Week Progress</div>
+      </div>
+    </div>
+
+    <div id="weekOverview" class="week-overview"></div>
+    
+    <div class="card">
+      <h2>Weekly Schedule</h2>
+      <div id="weekSchedule"></div>
+    </div>
+
+    <button id="resetWeekBtn" class="reset-btn">🔄 Reset Week Progress</button>
+  </main>
+
+  <!-- Resources View -->
+  <main id="view-resources" class="view">
+    <div class="resource-section">
+      <div class="card">
+        <h2>🏋️ Workouts</h2>
+        
+        <div class="exercise-group">
+          <h4>Monday - Full Body Strength (3×8-12, 60-90s rest)</h4>
+          <div class="exercise-item">Barbell Back Squat <span class="alternative">→ Dumbbell Goblet Squat</span></div>
+          <div class="exercise-item">Bench Press <span class="alternative">→ Dumbbell Chest Press</span></div>
+          <div class="exercise-item">Bent-Over Barbell Row <span class="alternative">→ One-Arm Dumbbell Row</span></div>
+          <div class="exercise-item">Seated Overhead Press <span class="alternative">→ Arnold Press</span></div>
+          <div class="exercise-item">Romanian Deadlift <span class="alternative">→ Kettlebell Deadlift</span></div>
+          <div class="exercise-item">Plank (3×30-60s) <span class="alternative">→ Dead Bug</span></div>
+        </div>
+
+        <div class="exercise-group">
+          <h4>Tuesday/Thursday - HIIT + Core</h4>
+          <div class="exercise-item">20s all-out sprint, 40s rest × 8-10 rounds</div>
+          <div class="exercise-item">Hanging Knee Raises × 12 <span class="alternative">→ Lying Leg Raise</span></div>
+          <div class="exercise-item">Russian Twists × 20 <span class="alternative">→ Cable Woodchop</span></div>
+          <div class="exercise-item">Side Plank × 30s each side</div>
+        </div>
+
+        <div class="exercise-group">
+          <h4>Wednesday - Upper Strength + 20min Cardio</h4>
+          <div class="exercise-item">Pull-Ups <span class="alternative">→ Lat Pulldown</span></div>
+          <div class="exercise-item">Incline Dumbbell Press <span class="alternative">→ Barbell Incline Press</span></div>
+          <div class="exercise-item">Barbell Row <span class="alternative">→ Single-Arm Row</span></div>
+          <div class="exercise-item">Dumbbell Lateral Raise <span class="alternative">→ Cable Lateral Raise</span></div>
+          <div class="exercise-item">Tricep Dips <span class="alternative">→ Cable Rope Pushdown</span></div>
+          <div class="exercise-item">Bicep Curl <span class="alternative">→ Hammer Curl</span></div>
+        </div>
+
+        <div class="exercise-group">
+          <h4>Friday - Lower Strength + 20-30min Cardio</h4>
+          <div class="exercise-item">Deadlift <span class="alternative">→ Trap Bar Deadlift</span></div>
+          <div class="exercise-item">Walking Lunges <span class="alternative">→ Step-Ups</span></div>
+          <div class="exercise-item">Hip Thrusts <span class="alternative">→ Glute Bridge</span></div>
+          <div class="exercise-item">Bulgarian Split Squat <span class="alternative">→ Goblet Squat</span></div>
+          <div class="exercise-item">Standing Calf Raise <span class="alternative">→ Seated Calf Raise</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-section">
+      <div class="card">
+        <h2>🥗 Nutrition Guide</h2>
+        
+        <div class="meal-category">
+          <h3>Protein Snacks</h3>
+          <ul class="meal-list">
+            <li>Whey isolate shake (25g protein)</li>
+            <li>Greek yogurt 150g (18g protein) + cinnamon</li>
+            <li>Cottage cheese ½ cup (14g protein) + berries</li>
+            <li>Turkey/chicken slices with mustard</li>
+            <li>Hard-boiled eggs with hot sauce</li>
+            <li>Protein bars (18-22g protein, <8g sugar)</li>
+          </ul>
+        </div>
+
+        <div class="meal-category">
+          <h3>Post-Workout Breakfast (moderate carbs)</h3>
+          <ul class="meal-list">
+            <li>2 eggs + 3 egg whites + ½ banana</li>
+            <li>Protein shake + small handful berries</li>
+            <li>Greek yogurt + chia seeds + blueberries</li>
+          </ul>
+        </div>
+
+        <div class="meal-category">
+          <h3>Lunch (moderate carbs)</h3>
+          <ul class="meal-list">
+            <li>Chicken breast + quinoa + roasted veggies</li>
+            <li>Salmon + sweet potato + spinach</li>
+            <li>Lean ground turkey + brown rice + broccoli</li>
+          </ul>
+        </div>
+
+        <div class="meal-category">
+          <h3>Dinner (low carb + fats)</h3>
+          <ul class="meal-list">
+            <li>Grilled chicken + asparagus + olive oil</li>
+            <li>White fish + zucchini noodles + pesto</li>
+            <li>Lean steak + roasted Brussels sprouts</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <button data-target="view-today" class="active">Today</button>
+    <button data-target="view-week">Week</button>
+    <button data-target="view-resources">Guide</button>
+  </nav>
+
+  <script>
+    const WEEKLY_SCHEDULE = {
+      0: { // Sunday
+        type: "Rest Day",
+        workoutType: "rest",
+        dose: false,
+        schedule: [
+          {key:"hydrate",time:"08:00",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"activity",time:"09:00",title:"Light Activity",note:"Light mobility or leisure activity"},
+          {key:"breakfast",time:"09:30",title:"Breakfast",note:"Protein + fats"},
+          {key:"lunch",time:"12:30",title:"Lunch",note:"Protein + greens (low carb)"},
+          {key:"dinner",time:"18:00",title:"Dinner",note:"Protein + veggies (low carb)"},
+          {key:"sleep",time:"22:00",title:"Wind Down",note:"No food 2hrs before bed"}
+        ]
+      },
+      1: { // Monday
+        type: "Full Body Strength",
+        workoutType: "strength",
+        dose: true,
+        schedule: [
+          {key:"hydrate",time:"06:15",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"workout",time:"06:30",title:"Full Body Workout",note:"45-60min strength training",details:"Squats, Bench Press, Rows, Overhead Press, Romanian Deadlifts, Planks"},
+          {key:"postworkout",time:"07:45",title:"Post-Workout",note:"25-30g protein + small carbs (banana/berries)"},
+          {key:"snack1",time:"10:30",title:"Morning Snack",note:"Protein + fats (turkey + avocado)"},
+          {key:"lunch",time:"13:00",title:"Lunch",note:"Lean protein + moderate carbs + veggies"},
+          {key:"snack2",time:"16:30",title:"Afternoon Snack",note:"Protein + veggies or nuts"},
+          {key:"dinner",time:"19:00",title:"Dinner",note:"Lean protein + low-carb veggies + healthy fats"},
+          {key:"cutoff",time:"21:45",title:"Food Cutoff",note:"No food after this time"},
+          {key:"dose",time:"22:30",title:"Sermorelin Dose",note:"40mg injection"}
+        ]
+      },
+      2: { // Tuesday
+        type: "HIIT + Core",
+        workoutType: "hiit",
+        dose: true,
+        schedule: [
+          {key:"hydrate",time:"06:15",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"workout",time:"06:30",title:"HIIT + Core",note:"15-20min HIIT + core finisher",details:"Sprint intervals: 20s all-out / 40s rest × 8-10 rounds + core circuit"},
+          {key:"postworkout",time:"06:55",title:"Post-Workout",note:"Protein + small carbs"},
+          {key:"snack1",time:"10:00",title:"Morning Snack",note:"Protein + fats"},
+          {key:"lunch",time:"13:00",title:"Lunch",note:"Lean protein + moderate carbs"},
+          {key:"snack2",time:"16:00",title:"Afternoon Snack",note:"Protein + veggies"},
+          {key:"dinner",time:"19:00",title:"Dinner",note:"Protein + greens + olive oil"},
+          {key:"cutoff",time:"21:45",title:"Food Cutoff",note:"No food after this time"},
+          {key:"dose",time:"22:30",title:"Sermorelin Dose",note:"40mg injection"}
+        ]
+      },
+      3: { // Wednesday
+        type: "Upper Strength + Cardio",
+        workoutType: "strength",
+        dose: true,
+        schedule: [
+          {key:"hydrate",time:"06:15",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"workout",time:"06:30",title:"Upper Body + Cardio",note:"45min upper body + 20min steady cardio",details:"Pull-ups, Incline Press, Rows, Lateral Raises, Triceps, Biceps + 20min cardio"},
+          {key:"postworkout",time:"07:45",title:"Post-Workout",note:"Protein + moderate carbs"},
+          {key:"snack1",time:"10:30",title:"Morning Snack",note:"Protein + fats"},
+          {key:"lunch",time:"13:00",title:"Lunch",note:"Lean protein + moderate carbs"},
+          {key:"snack2",time:"16:30",title:"Afternoon Snack",note:"Protein + veggies"},
+          {key:"dinner",time:"19:00",title:"Dinner",note:"Protein + low-carb veggies + fats"},
+          {key:"cutoff",time:"21:45",title:"Food Cutoff",note:"No food after this time"},
+          {key:"dose",time:"22:30",title:"Sermorelin Dose",note:"40mg injection"}
+        ]
+      },
+      4: { // Thursday
+        type: "HIIT",
+        workoutType: "hiit",
+        dose: true,
+        schedule: [
+          {key:"hydrate",time:"06:15",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"workout",time:"06:30",title:"HIIT Training",note:"15min high intensity",details:"Battle ropes 30s on/30s off × 10 rounds OR Sprint intervals 15s/45s × 10"},
+          {key:"postworkout",time:"06:50",title:"Post-Workout",note:"Protein + small carbs"},
+          {key:"snack1",time:"10:00",title:"Morning Snack",note:"Protein + fats"},
+          {key:"lunch",time:"13:00",title:"Lunch",note:"Lean protein + moderate carbs"},
+          {key:"snack2",time:"16:00",title:"Afternoon Snack",note:"Protein + veggies"},
+          {key:"dinner",time:"19:00",title:"Dinner",note:"Protein + greens + olive oil"},
+          {key:"cutoff",time:"21:45",title:"Food Cutoff",note:"No food after this time"},
+          {key:"dose",time:"22:30",title:"Sermorelin Dose",note:"40mg injection"}
+        ]
+      },
+      5: { // Friday
+        type: "Lower Strength + Cardio",
+        workoutType: "strength",
+        dose: true,
+        schedule: [
+          {key:"hydrate",time:"06:15",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"workout",time:"06:30",title:"Lower Body + Cardio",note:"45min lower body + 20-30min cardio",details:"Deadlifts, Lunges, Hip Thrusts, Split Squats, Calves + 20-30min cardio"},
+          {key:"postworkout",time:"07:45",title:"Post-Workout",note:"Protein + moderate carbs"},
+          {key:"snack1",time:"10:30",title:"Morning Snack",note:"Protein + fats"},
+          {key:"lunch",time:"13:00",title:"Lunch",note:"Lean protein + moderate carbs"},
+          {key:"snack2",time:"16:30",title:"Afternoon Snack",note:"Protein + veggies"},
+          {key:"dinner",time:"19:00",title:"Dinner",note:"Protein + low-carb veggies + fats"},
+          {key:"cutoff",time:"21:45",title:"Food Cutoff",note:"No food after this time"},
+          {key:"dose",time:"22:30",title:"Sermorelin Dose",note:"40mg injection"}
+        ]
+      },
+      6: { // Saturday
+        type: "Active Recovery",
+        workoutType: "recovery",
+        dose: false,
+        schedule: [
+          {key:"hydrate",time:"07:00",title:"Wake & Hydrate",note:"16-20 oz water"},
+          {key:"activity",time:"07:30",title:"Fasted Walk/Yoga",note:"20-30min light activity"},
+          {key:"breakfast",time:"09:00",title:"Breakfast",note:"Protein + fats (low carb)"},
+          {key:"lunch",time:"12:30",title:"Lunch",note:"Protein + greens (low carb)"},
+          {key:"dinner",time:"18:00",title:"Dinner",note:"Protein + veggies (low carb)"},
+          {key:"sleep",time:"22:00",title:"Wind Down",note:"No food 2hrs before bed"}
+        ]
+      }
+    };
+
+    const WORKOUT_ICONS = {
+      strength: "🏋️",
+      hiit: "⚡",
+      recovery: "🚶",
+      rest: "😴"
+    };
+
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // State management
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem("mfl_enhanced_state") || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveState(state) {
+      localStorage.setItem("mfl_enhanced_state", JSON.stringify(state));
+    }
+
+    function initDefaultState() {
+      const state = loadState();
+      if (!state.waterGoal) state.waterGoal = 8;
+      if (!state.water) state.water = {};
+      if (!state.checks) state.checks = {};
+      if (!state.streak) state.streak = 0;
+      if (!state.weekStarted) {
+        // Start week on Monday
+        const today = new Date();
+        const monday = new Date(today);
+        const dayOfWeek = monday.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        monday.setDate(today.getDate() + diffToMonday);
+        state.weekStarted = monday.toISOString().slice(0, 10);
+      }
+      saveState(state);
+    }
+
+    function todayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getDayOfWeek() {
+      return new Date().getDay();
+    }
+
+    function formatTime(timeStr) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes);
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    // Render today's schedule
+    function renderToday() {
+      const dayOfWeek = getDayOfWeek();
+      const daySchedule = WEEKLY_SCHEDULE[dayOfWeek];
+      const state = loadState();
+      const dayKey = todayKey();
+      const checks = state.checks[dayKey] || {};
+
+      // Update day header
+      document.getElementById('dayName').textContent = DAY_NAMES[dayOfWeek];
+      document.getElementById('dayType').innerHTML = `${WORKOUT_ICONS[daySchedule.workoutType]} ${daySchedule.type}${daySchedule.dose ? ' + <span class="dose-indicator">Sermorelin</span>' : ' <span class="no-dose">(No dose)</span>'}`;
+      document.getElementById('streakCount').textContent = state.streak || 0;
+
+      // Render timeline
+      const timeline = document.getElementById('timeline');
+      timeline.innerHTML = '';
+
+      daySchedule.schedule.forEach(item => {
+        const li = document.createElement('li');
+        const task = document.createElement('div');
+        task.className = 'task';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = !!checks[item.key];
+        checkbox.addEventListener('change', () => {
+          const currentState = loadState();
+          const currentDayKey = todayKey();
+          currentState.checks[currentDayKey] = currentState.checks[currentDayKey] || {};
+          currentState.checks[currentDayKey][item.key] = checkbox.checked;
+          saveState(currentState);
+          renderWater();
+          updateProgress();
+        });
+        dropsContainer.appendChild(drop);
+      }
+
+      const waterProgress = (currentWater / state.waterGoal) * 100;
+      document.getElementById('waterProgress').style.width = `${waterProgress}%`;
+    }
+
+    // Progress tracking
+    function updateProgress() {
+      const state = loadState();
+      const dayKey = todayKey();
+      const checks = state.checks[dayKey] || {};
+      const dayOfWeek = getDayOfWeek();
+      const daySchedule = WEEKLY_SCHEDULE[dayOfWeek];
+      
+      const completedTasks = Object.values(checks).filter(Boolean).length;
+      const totalTasks = daySchedule.schedule.length;
+      const waterProgress = (state.water[dayKey] || 0) / state.waterGoal;
+      
+      // Calculate overall daily progress (80% tasks, 20% water)
+      const taskProgress = totalTasks > 0 ? completedTasks / totalTasks : 0;
+      const overallProgress = (taskProgress * 0.8) + (waterProgress * 0.2);
+      
+      // Update streak if day is complete
+      if (overallProgress >= 0.9 && !state.completedDays) {
+        state.completedDays = {};
+      }
+      
+      if (overallProgress >= 0.9 && !state.completedDays[dayKey]) {
+        state.completedDays[dayKey] = true;
+        state.streak = (state.streak || 0) + 1;
+        saveState(state);
+      }
+    }
+
+    // Week overview
+    function renderWeekOverview() {
+      const state = loadState();
+      const weekOverview = document.getElementById('weekOverview');
+      const weekSchedule = document.getElementById('weekSchedule');
+      
+      if (!weekOverview) return;
+      
+      weekOverview.innerHTML = '';
+      weekSchedule.innerHTML = '';
+
+      // Get week start date
+      const weekStart = new Date(state.weekStarted);
+      let completedDays = 0;
+      let totalDays = 0;
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        const dateKey = date.toISOString().slice(0, 10);
+        const dayOfWeek = date.getDay();
+        const daySchedule = WEEKLY_SCHEDULE[dayOfWeek];
+        const checks = state.checks[dateKey] || {};
+        
+        // Week overview circles
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'week-day';
+        
+        const completedTasks = Object.values(checks).filter(Boolean).length;
+        const totalTasks = daySchedule.schedule.length;
+        const waterProgress = (state.water[dateKey] || 0) / state.waterGoal;
+        const dayProgress = totalTasks > 0 ? 
+          ((completedTasks / totalTasks) * 0.8 + waterProgress * 0.2) : 0;
+        
+        totalDays++;
+        if (dayProgress >= 0.9) completedDays++;
+        
+        dayDiv.innerHTML = `
+          <div class="week-day-name">${DAY_NAMES[dayOfWeek].slice(0,3)}</div>
+          <div class="progress-circle ${dayProgress >= 0.9 ? 'complete' : ''}">${Math.round(dayProgress * 100)}%</div>
+          <div class="week-day-progress">${WORKOUT_ICONS[daySchedule.workoutType]} ${daySchedule.dose ? '💉' : ''}</div>
+        `;
+        
+        weekOverview.appendChild(dayDiv);
+
+        // Week schedule
+        const scheduleItem = document.createElement('div');
+        scheduleItem.className = 'card';
+        scheduleItem.style.marginBottom = '12px';
+        scheduleItem.innerHTML = `
+          <h3>${DAY_NAMES[dayOfWeek]} - ${daySchedule.type}</h3>
+          <div style="font-size: 0.85rem; color: var(--muted);">
+            ${WORKOUT_ICONS[daySchedule.workoutType]} ${daySchedule.workoutType === 'rest' ? 'Rest day' : 'Workout day'}
+            ${daySchedule.dose ? '• 💉 Sermorelin dose' : '• No dose'}
+          </div>
+          <div class="progress-bar" style="margin-top: 8px;">
+            <div class="progress-fill" style="width: ${dayProgress * 100}%"></div>
+          </div>
+        `;
+        
+        weekSchedule.appendChild(scheduleItem);
+      }
+
+      // Update stats
+      const weekPercentage = Math.round((completedDays / totalDays) * 100);
+      document.getElementById('weekCompleted').textContent = completedDays;
+      document.getElementById('weekPercentage').textContent = `${weekPercentage}%`;
+    }
+
+    // Navigation
+    function openView(viewId) {
+      document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      
+      document.querySelectorAll('.tabbar button').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tabbar button[data-target='${viewId}']`).classList.add('active');
+
+      if (viewId === 'view-week') {
+        renderWeekOverview();
+      }
+    }
+
+    // Event listeners
+    document.querySelectorAll('.tabbar button').forEach(btn => {
+      btn.addEventListener('click', () => openView(btn.dataset.target));
+    });
+
+    document.getElementById('resetWeekBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset your week progress? This cannot be undone.')) {
+        const state = loadState();
+        state.checks = {};
+        state.water = {};
+        state.streak = 0;
+        state.completedDays = {};
+        
+        // Reset week start to current Monday
+        const today = new Date();
+        const monday = new Date(today);
+        const dayOfWeek = monday.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        monday.setDate(today.getDate() + diffToMonday);
+        state.weekStarted = monday.toISOString().slice(0, 10);
+        
+        saveState(state);
+        renderToday();
+        renderWeekOverview();
+      }
+    });
+
+    // Initialize app
+    initDefaultState();
+    renderToday();
+    renderWeekOverview();
+
+    // Service Worker registration (for PWA functionality)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {
+        console.log('Service worker registration failed');
+      });
+    }
+
+    // Update week label
+    function updateWeekLabel() {
+      const state = loadState();
+      const weekStart = new Date(state.weekStarted);
+      const weekNum = Math.floor((Date.now() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+      document.getElementById('weekLabel').textContent = `Week ${Math.max(1, weekNum)}`;
+    }
+
+    updateWeekLabel();
+
+    // Auto-refresh at midnight
+    function scheduleNextDayUpdate() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      
+      const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+      
+      setTimeout(() => {
+        renderToday();
+        renderWeekOverview();
+        updateWeekLabel();
+        scheduleNextDayUpdate(); // Schedule next update
+      }, timeUntilMidnight);
+    }
+
+    scheduleNextDayUpdate();
+  </script>
+</body>
+</html>State);
+          updateProgress();
+          renderWeekOverview();
+        });
+
+        const content = document.createElement('div');
+        content.className = 'task-content';
+        
+        let contentHTML = `
+          <div class="task-time">${formatTime(item.time)}</div>
+          <div class="task-title">${item.title}</div>
+          <div class="task-note">${item.note}</div>
+        `;
+
+        if (item.details) {
+          contentHTML += `
+            <div class="task-details">
+              <div class="workout-details">
+                <strong>Workout Details:</strong><br>
+                <div class="exercise-list">${item.details}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        content.innerHTML = contentHTML;
+
+        task.appendChild(checkbox);
+        task.appendChild(content);
+        li.appendChild(task);
+        timeline.appendChild(li);
+      });
+
+      renderWater();
+      updateProgress();
+    }
+
+    // Water tracking
+    function renderWater() {
+      const state = loadState();
+      const dayKey = todayKey();
+      const currentWater = state.water[dayKey] || 0;
+      
+      document.getElementById('waterCurrent').textContent = currentWater;
+      
+      const dropsContainer = document.getElementById('waterDrops');
+      dropsContainer.innerHTML = '';
+
+      for (let i = 0; i < state.waterGoal; i++) {
+        const drop = document.createElement('button');
+        drop.className = `drop${i < currentWater ? ' filled' : ''}`;
+        drop.addEventListener('click', () => {
+          const currentState = loadState();
+          const currentDayKey = todayKey();
+          const current = currentState.water[currentDayKey] || 0;
+          currentState.water[currentDayKey] = i < current ? i : i + 1;
+          saveState(current
