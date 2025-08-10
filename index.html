@@ -1,75 +1,432 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Morning Fat Loss Tracker</title>
-  <meta name="theme-color" content="#5a7f71" />
+  <meta name="theme-color" content="#5a7f71">
   <link rel="manifest" href="manifest.webmanifest">
   <style>
-    :root{--bg:#f4f7f5;--card:#e7efe9;--accent:#5a7f71;--drop:#a8c8ba;--ink:#22302a;--muted:#5b6b64;--white:#fff;--success:#4ade80;--warning:#f59e0b;}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-    .app-header{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:linear-gradient(180deg,var(--card),rgba(231,239,233,.4));border-bottom:1px solid rgba(0,0,0,.06);z-index:100}
-    h1{margin:0;font-size:1.25rem}
-    h2{margin:0 0 12px 0;color:var(--accent);font-size:1.1rem}
-    h3{margin:0 0 8px 0;font-size:1rem}
-    .linklike{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline}
-    .primary{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer}
-    .view{display:none;padding:12px 12px 72px}.view.active{display:block}
-    .day-header{display:flex;justify-content:space-between;align-items:center;margin:8px 4px 16px;padding:12px;background:var(--card);border-radius:12px;border:1px solid rgba(0,0,0,.05)}
-    .day-info{display:flex;flex-direction:column;gap:4px}
-    .day-name{font-size:1.1rem;font-weight:700;color:var(--accent)}
-    .day-type{font-size:0.9rem;color:var(--muted)}
-    .streak{font-size:0.9rem;color:var(--accent);font-weight:600}
-    .timeline{list-style:none;padding:0;margin:0}
-    .card,.timeline li{background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:14px;padding:14px;margin:10px 4px}
-    .task{display:grid;grid-template-columns:32px 1fr;align-items:start;gap:12px}
-    .task input[type="checkbox"]{width:24px;height:24px;accent-color:var(--accent);margin-top:2px}
-    .task-content{min-width:0}
-    .task-time{font-weight:700;color:var(--accent);font-size:0.95rem;margin-bottom:4px}
-    .task-title{font-weight:600;margin-bottom:4px}
-    .task-note{color:var(--muted);font-size:0.9rem;line-height:1.4}
-    .task-details{margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)}
-    .workout-details{background:rgba(90,127,113,.08);padding:10px;border-radius:8px;margin-top:8px}
-    .exercise-list{margin:6px 0;font-size:0.85rem;line-height:1.4}
-    .meal-options{background:rgba(168,200,186,.15);padding:8px;border-radius:6px;font-size:0.85rem;margin-top:6px}
-    .water{margin:20px 4px}
-    .water-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .water-count{color:var(--muted);font-size:0.9rem}
-    .drops{display:flex;gap:6px;flex-wrap:wrap}
-    .drop{width:24px;height:32px;border-radius:12px;background:rgba(168,200,186,.2);border:1px solid rgba(0,0,0,.08);cursor:pointer;transition:all 0.2s ease}
-    .drop.filled{background:var(--drop);transform:scale(1.05)}
-    .drop::after{content:"";position:absolute;top:6px;left:8px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.9)}
-    .week-overview{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
-    .week-day{background:var(--card);border-radius:10px;padding:12px 8px;text-align:center;border:1px solid rgba(0,0,0,.05)}
-    .week-day-name{font-size:0.75rem;color:var(--muted);margin-bottom:6px}
-    .week-day-progress{font-size:0.7rem;margin-top:6px}
-    .progress-circle{width:32px;height:32px;border-radius:50%;background:rgba(168,200,186,.2);display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:700;color:var(--accent)}
-    .progress-circle.complete{background:var(--success);color:white}
-    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
-    .stat-card{background:var(--card);border-radius:12px;padding:16px;text-align:center;border:1px solid rgba(0,0,0,.05)}
-    .stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);display:block}
-    .stat-label{font-size:0.8rem;color:var(--muted);margin-top:4px}
-    .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid rgba(0,0,0,.06);z-index:100}
-    .tabbar button{flex:1;padding:14px 8px;background:none;border:none;color:var(--muted);font-weight:600;font-size:0.8rem}
-    .tabbar button.active{color:var(--accent)}
-    .workout-type{display:inline-block;background:var(--accent);color:white;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;margin-bottom:6px}
-    .dose-indicator{color:var(--success);font-weight:600;font-size:0.8rem}
-    .no-dose{color:var(--warning);font-weight:600;font-size:0.8rem}
-    .resource-section{margin-bottom:24px}
-    .exercise-group{margin-bottom:16px}
-    .exercise-group h4{margin:0 0 8px 0;color:var(--accent);font-size:0.9rem}
-    .exercise-item{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:0.85rem}
-    .exercise-item:last-child{border-bottom:none}
-    .alternative{color:var(--muted);font-size:0.8rem;margin-left:12px}
-    .meal-category{margin-bottom:16px}
-    .meal-list{list-style:none;padding:0;margin:8px 0}
-    .meal-list li{padding:6px 0;font-size:0.85rem;border-bottom:1px solid rgba(0,0,0,.04)}
-    .meal-list li:last-child{border-bottom:none}
-    .reset-btn{background:var(--warning);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;margin-top:12px}
-    .progress-bar{width:100%;height:8px;background:#dfe9e3;border-radius:4px;overflow:hidden;margin:8px 0}
-    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 0.3s ease}
+    :root {
+      --bg: #f4f7f5;
+      --card: #e7efe9;
+      --accent: #5a7f71;
+      --drop: #a8c8ba;
+      --ink: #22302a;
+      --muted: #5b6b64;
+      --white: #fff;
+      --success: #4ade80;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, var(--card), rgba(231, 239, 233, 0.4));
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      z-index: 100;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 1rem;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .view {
+      display: none;
+      padding: 12px 12px 72px;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 4px 16px;
+      padding: 12px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .day-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .day-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .day-type {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .streak {
+      font-size: 0.9rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .timeline {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .card, .timeline li {
+      background: var(--card);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 10px 4px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .task input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      accent-color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .task-content {
+      min-width: 0;
+    }
+
+    .task-time {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .task-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .task-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .task-details {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .workout-details {
+      background: rgba(90, 127, 113, 0.08);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .exercise-list {
+      margin: 6px 0;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .water {
+      margin: 20px 4px;
+    }
+
+    .water-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .water-count {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .drops {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .drop {
+      width: 24px;
+      height: 32px;
+      border-radius: 12px;
+      background: rgba(168, 200, 186, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .drop.filled {
+      background: var(--drop);
+      transform: scale(1.05);
+    }
+
+    .drop::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .week-overview {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .week-day {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .week-day-name {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .week-day-progress {
+      font-size: 0.7rem;
+      margin-top: 6px;
+    }
+
+    .progress-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(168, 200, 186, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.7rem;
+    }
+
+    .progress-circle.complete {
+      background: var(--success);
+      color: white;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      background: #fff;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      z-index: 100;
+    }
+
+    .tabbar button {
+      flex: 1;
+      padding: 14px 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .tabbar button.active {
+      color: var(--accent);
+    }
+
+    .workout-type {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .dose-indicator {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .no-dose {
+      color: var(--warning);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .resource-section {
+      margin-bottom: 24px;
+    }
+
+    .exercise-group {
+      margin-bottom: 16px;
+    }
+
+    .exercise-group h4 {
+      margin: 0 0 8px 0;
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    .exercise-item {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 0.85rem;
+    }
+
+    .exercise-item:last-child {
+      border-bottom: none;
+    }
+
+    .alternative {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-left: 12px;
+    }
+
+    .meal-category {
+      margin-bottom: 16px;
+    }
+
+    .meal-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0;
+    }
+
+    .meal-list li {
+      padding: 6px 0;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .meal-list li:last-child {
+      border-bottom: none;
+    }
+
+    .reset-btn {
+      background: var(--warning);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #dfe9e3;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      transition: width 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -360,8 +717,8 @@
       if (!state.water) state.water = {};
       if (!state.checks) state.checks = {};
       if (!state.streak) state.streak = 0;
+      if (!state.completedDays) state.completedDays = {};
       if (!state.weekStarted) {
-        // Start week on Monday
         const today = new Date();
         const monday = new Date(today);
         const dayOfWeek = monday.getDay();
@@ -418,6 +775,62 @@
           currentState.checks[currentDayKey] = currentState.checks[currentDayKey] || {};
           currentState.checks[currentDayKey][item.key] = checkbox.checked;
           saveState(currentState);
+          updateProgress();
+          renderWeekOverview();
+        });
+
+        const content = document.createElement('div');
+        content.className = 'task-content';
+        
+        let contentHTML = `
+          <div class="task-time">${formatTime(item.time)}</div>
+          <div class="task-title">${item.title}</div>
+          <div class="task-note">${item.note}</div>
+        `;
+
+        if (item.details) {
+          contentHTML += `
+            <div class="task-details">
+              <div class="workout-details">
+                <strong>Workout Details:</strong><br>
+                <div class="exercise-list">${item.details}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        content.innerHTML = contentHTML;
+
+        task.appendChild(checkbox);
+        task.appendChild(content);
+        li.appendChild(task);
+        timeline.appendChild(li);
+      });
+
+      renderWater();
+      updateProgress();
+    }
+
+    // Water tracking
+    function renderWater() {
+      const state = loadState();
+      const dayKey = todayKey();
+      const currentWater = state.water[dayKey] || 0;
+      
+      document.getElementById('waterCurrent').textContent = currentWater;
+      
+      const dropsContainer = document.getElementById('waterDrops');
+      dropsContainer.innerHTML = '';
+
+      for (let i = 0; i < state.waterGoal; i++) {
+        const drop = document.createElement('button');
+        drop.className = `drop${i < currentWater ? ' filled' : ''}`;
+        drop.addEventListener('click', () => {
+          const currentState = loadState();
+          const currentDayKey = todayKey();
+          const current = currentState.water[currentDayKey] || 0;
+          currentState.water[currentDayKey] = i < current ? i : i + 1;
+          saveState(currentState);
           renderWater();
           updateProgress();
         });
@@ -445,14 +858,11 @@
       const overallProgress = (taskProgress * 0.8) + (waterProgress * 0.2);
       
       // Update streak if day is complete
-      if (overallProgress >= 0.9 && !state.completedDays) {
-        state.completedDays = {};
-      }
-      
       if (overallProgress >= 0.9 && !state.completedDays[dayKey]) {
         state.completedDays[dayKey] = true;
         state.streak = (state.streak || 0) + 1;
         saveState(state);
+        document.getElementById('streakCount').textContent = state.streak;
       }
     }
 
@@ -562,20 +972,9 @@
         saveState(state);
         renderToday();
         renderWeekOverview();
+        updateWeekLabel();
       }
     });
-
-    // Initialize app
-    initDefaultState();
-    renderToday();
-    renderWeekOverview();
-
-    // Service Worker registration (for PWA functionality)
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {
-        console.log('Service worker registration failed');
-      });
-    }
 
     // Update week label
     function updateWeekLabel() {
@@ -584,8 +983,6 @@
       const weekNum = Math.floor((Date.now() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
       document.getElementById('weekLabel').textContent = `Week ${Math.max(1, weekNum)}`;
     }
-
-    updateWeekLabel();
 
     // Auto-refresh at midnight
     function scheduleNextDayUpdate() {
@@ -604,63 +1001,20 @@
       }, timeUntilMidnight);
     }
 
+    // Initialize app
+    initDefaultState();
+    renderToday();
+    renderWeekOverview();
+    updateWeekLabel();
     scheduleNextDayUpdate();
-  </script>
-</body>
-</html>State);
-          updateProgress();
-          renderWeekOverview();
-        });
 
-        const content = document.createElement('div');
-        content.className = 'task-content';
-        
-        let contentHTML = `
-          <div class="task-time">${formatTime(item.time)}</div>
-          <div class="task-title">${item.title}</div>
-          <div class="task-note">${item.note}</div>
-        `;
-
-        if (item.details) {
-          contentHTML += `
-            <div class="task-details">
-              <div class="workout-details">
-                <strong>Workout Details:</strong><br>
-                <div class="exercise-list">${item.details}</div>
-              </div>
-            </div>
-          `;
-        }
-
-        content.innerHTML = contentHTML;
-
-        task.appendChild(checkbox);
-        task.appendChild(content);
-        li.appendChild(task);
-        timeline.appendChild(li);
+    // Service Worker registration (for PWA functionality)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {
+        console.log('Service worker registration failed');
       });
-
-      renderWater();
-      updateProgress();
     }
 
-    // Water tracking
-    function renderWater() {
-      const state = loadState();
-      const dayKey = todayKey();
-      const currentWater = state.water[dayKey] || 0;
-      
-      document.getElementById('waterCurrent').textContent = currentWater;
-      
-      const dropsContainer = document.getElementById('waterDrops');
-      dropsContainer.innerHTML = '';
-
-      for (let i = 0; i < state.waterGoal; i++) {
-        const drop = document.createElement('button');
-        drop.className = `drop${i < currentWater ? ' filled' : ''}`;
-        drop.addEventListener('click', () => {
-          const currentState = loadState();
-          const currentDayKey = todayKey();
-          const current = currentState.water[currentDayKey] || 0;
-          currentState.water[currentDayKey] = i < current ? i : i + 1;
-          saveState(current
+  </script>
+</body>
+</html>
