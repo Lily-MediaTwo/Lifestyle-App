@@ -1,4 +1,373 @@
-<!DOCTYPE html>
+// ---- Advanced Data Visualization ----
+    function setChartTimeframe(chartType, timeframe) {
+      chartTimeframes[chartType] = timeframe;
+      
+      // Update active state
+      const controls = document.querySelectorAll(`.card:has(#chart${chartType.charAt(0).toUpperCase() + chartType.slice(1)}) .chart-control`);
+      controls.forEach(control => {
+        control.classList.toggle('active', control.textContent === timeframe.toUpperCase());
+      });
+      
+      // Re-render chart
+      if (chartType === 'weight') renderAdvancedWeightChart();
+      if (chartType === 'body') renderBodyCompositionChart();
+      if (chartType === 'performance') renderPerformanceChart();
+    }
+
+    function renderAdvancedWeightChart() {
+      const cv = document.getElementById('chartWeight');
+      if (!cv) return;
+      
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      const timeframe = chartTimeframes.weight;
+      
+      // Get data based on timeframe
+      const entries = getLogsSorted();
+      const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const wPts = entries
+        .filter(([d, L]) => L.weight != null && new Date(d) >= cutoffDate)
+        .map(([d, L]) => ({
+          x: daysSinceEpoch(d), 
+          y: Number(L.weight),
+          date: d,
+          label: `${Number(L.weight)} lbs`
+        }));
+      
+      drawAdvancedChart(ctx, w, h, wPts, {
+        color: '#5a7f71',
+        gradientColor: 'rgba(90, 127, 113, 0.1)',
+        tooltipId: 'weightTooltip'
+      });
+      
+      // Update trend indicators
+      updateTrendIndicators('weight', wPts);
+    }
+
+    function renderBodyCompositionChart() {
+      const cv = document.getElementById('chartBody');
+      if (!cv) return;
+      
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      const timeframe = chartTimeframes.body;
+      
+      const entries = getLogsSorted();
+      const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const waistPts = entries
+        .filter(([d, L]) => L.waist != null && new Date(d) >= cutoffDate)
+        .map(([d, L]) => ({x: daysSinceEpoch(d), y: Number(L.waist), date: d, type: 'waist'}));
+      
+      const hipsPts = entries
+        .filter(([d, L]) => L.hips != null && new Date(d) >= cutoffDate)
+        .map(([d, L]) => ({x: daysSinceEpoch(d), y: Number(L.hips), date: d, type: 'hips'}));
+      
+      drawMultiLineChart(ctx, w, h, [
+        { data: waistPts, color: '#a8c8ba', label: 'Waist' },
+        { data: hipsPts, color: '#5a7f71', label: 'Hips' }
+      ], 'bodyTooltip');
+      
+      // Update change indicators
+      document.getElementById('waistChange').textContent = waistPts.length ? `Waist: ${calcChange(waistPts)} in` : '—';
+      document.getElementById('hipsChange').textContent = hipsPts.length ? `Hips: ${calcChange(hipsPts)} in` : '—';
+    }
+
+    function renderPerformanceChart() {
+      const cv = document.getElementById('chartPerformance');
+      if (!cv) return;
+      
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      
+      // Create performance metrics from exercise data and other factors
+      const s = loadState();
+      const entries = getLogsSorted();
+      const days = chartTimeframes.performance === '30d' ? 30 : 90;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const performanceData = entries
+        .filter(([d, L]) => new Date(d) >= cutoffDate)
+        .map(([d, L]) => {
+          let score = 0;
+          let factors = 0;
+          
+          // Sleep quality (0-40 points)
+          if (L.sleep) {
+            score += Math.min(40, (L.sleep / 8) * 40);
+            factors++;
+          }
+          
+          // Protein intake (0-30 points)
+          if (L.protein) {
+            const proteinGoal = s.proteinGoal || 120;
+            score += Math.min(30, (L.protein / proteinGoal) * 30);
+            factors++;
+          }
+          
+          // Exercise completion (0-30 points)
+          if (L.exercises && Object.keys(L.exercises).length > 0) {
+            score += 30;
+            factors++;
+          }
+          
+                      return {
+            x: daysSinceEpoch(d),
+            y: factors > 0 ? score / factors : 0,
+            date: d,
+            label: `Performance: ${Math.round(factors > 0 ? score / factors : 0)}%`
+          };
+        });
+      
+      drawAdvancedChart(ctx, w, h, performanceData, {
+        color: '#4ade80',
+        gradientColor: 'rgba(74, 222, 128, 0.1)',
+        tooltipId: 'performanceTooltip'
+      });
+    }
+
+    function drawAdvancedChart(ctx, w, h, points, options) {
+      ctx.clearRect(0, 0, w, h);
+      
+      if (points.length === 0) {
+        ctx.fillStyle = '#999';
+        ctx.font = '14px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', w/2, h/2);
+        return;
+      }
+      
+      // Draw grid
+      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 5; i++) {
+        const y = (h - 40) * (i / 5) + 20;
+        ctx.beginPath();
+        ctx.moveTo(40, y);
+        ctx.lineTo(w - 20, y);
+        ctx.stroke();
+      }
+      
+      // Draw axes
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, 20);
+      ctx.lineTo(40, h - 20);
+      ctx.lineTo(w - 20, h - 20);
+      ctx.stroke();
+      
+      if (points.length < 2) return;
+      
+      const xs = points.map(p => p.x);
+      const ys = points.map(p => p.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      
+      const px = x => 40 + ((x - minX) / Math.max(1, maxX - minX)) * (w - 60);
+      const py = y => (h - 20) - ((y - minY) / Math.max(1, maxY - minY)) * (h - 40);
+      
+      // Draw gradient fill
+      if (options.gradientColor) {
+        const gradient = ctx.createLinearGradient(0, 20, 0, h - 20);
+        gradient.addColorStop(0, options.gradientColor);
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(px(points[0].x), h - 20);
+        points.forEach(p => ctx.lineTo(px(p.x), py(p.y)));
+        ctx.lineTo(px(points[points.length - 1].x), h - 20);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Draw line
+      ctx.strokeStyle = options.color;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const X = px(p.x);
+        const Y = py(p.y);
+        if (i === 0) ctx.moveTo(X, Y);
+        else ctx.lineTo(X, Y);
+      });
+      ctx.stroke();
+      
+      // Draw points
+      ctx.fillStyle = options.color;
+      points.forEach(p => {
+        const X = px(p.x);
+        const Y = py(p.y);
+        ctx.beginPath();
+        ctx.arc(X, Y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // White center
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(X, Y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = options.color;
+      });
+      
+      // Add interactivity for tooltips
+      const canvas = ctx.canvas;
+      canvas.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Scale for canvas resolution
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const scaledX = mouseX * scaleX;
+        const scaledY = mouseY * scaleY;
+        
+        let nearestPoint = null;
+        let minDistance = Infinity;
+        
+        points.forEach(p => {
+          const X = px(p.x);
+          const Y = py(p.y);
+          const distance = Math.sqrt((scaledX - X) ** 2 + (scaledY - Y) ** 2);
+          if (distance < 20 && distance < minDistance) {
+            minDistance = distance;
+            nearestPoint = p;
+          }
+        });
+        
+        const tooltip = document.getElementById(options.tooltipId);
+        if (nearestPoint && tooltip) {
+          tooltip.style.opacity = '1';
+          tooltip.style.left = (e.clientX + 10) + 'px';
+          tooltip.style.top = (e.clientY - 30) + 'px';
+          tooltip.textContent = nearestPoint.label || `${nearestPoint.y}`;
+        } else if (tooltip) {
+          tooltip.style.opacity = '0';
+        }
+      };
+      
+      canvas.onmouseleave = () => {
+        const tooltip = document.getElementById(options.tooltipId);
+        if (tooltip) tooltip.style.opacity = '0';
+      };
+    }
+
+    function drawMultiLineChart(ctx, w, h, datasets, tooltipId) {
+      ctx.clearRect(0, 0, w, h);
+      
+      if (datasets.every(ds => ds.data.length === 0)) {
+        ctx.fillStyle = '#999';
+        ctx.font = '14px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', w/2, h/2);
+        return;
+      }
+      
+      // Draw grid and axes
+      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 5; i++) {
+        const y = (h - 40) * (i / 5) + 20;
+        ctx.beginPath();
+        ctx.moveTo(40, y);
+        ctx.lineTo(w - 20, y);
+        ctx.stroke();
+      }
+      
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, 20);
+      ctx.lineTo(40, h - 20);
+      ctx.lineTo(w - 20, h - 20);
+      ctx.stroke();
+      
+      // Get combined ranges
+      const allPoints = datasets.flatMap(ds => ds.data);
+      if (allPoints.length === 0) return;
+      
+      const xs = allPoints.map(p => p.x);
+      const ys = allPoints.map(p => p.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      
+      const px = x => 40 + ((x - minX) / Math.max(1, maxX - minX)) * (w - 60);
+      const py = y => (h - 20) - ((y - minY) / Math.max(1, maxY - minY)) * (h - 40);
+      
+      // Draw each dataset
+      datasets.forEach((dataset, index) => {
+        if (dataset.data.length < 2) return;
+        
+        ctx.strokeStyle = dataset.color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        
+        dataset.data.forEach((p, i) => {
+          const X = px(p.x);
+          const Y = py(p.y);
+          if (i === 0) ctx.moveTo(X, Y);
+          else ctx.lineTo(X, Y);
+        });
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = dataset.color;
+        dataset.data.forEach(p => {
+          const X = px(p.x);
+          const Y = py(p.y);
+          ctx.beginPath();
+          ctx.arc(X, Y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+      
+      // Draw legend
+      datasets.forEach((dataset, index) => {
+        const legendY = 35 + (index * 15);
+        ctx.fillStyle = dataset.color;
+        ctx.fillRect(w - 80, legendY - 5, 10, 3);
+        ctx.fillStyle = '#666';
+        ctx.font = '11px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(dataset.label, w - 65, legendY);
+      });
+    }
+
+    function updateTrendIndicators(type, points) {
+      if (points.length < 2) return;
+      
+      const recent = points.slice(-7); // Last 7 data points
+      const older = points.slice(-14, -7); // Previous 7 data points
+      
+      if (recent.length === 0 || older.length === 0) return;
+      
+      const recentAvg = recent.reduce((sum, p) => sum + p.y, 0) / recent.length;
+      const olderAvg = older.reduce((sum, p) => sum + p.y, 0) / older.length;
+      const trend = recentAvg - olderAvg;
+      
+      const trendEl = document.getElementById(`${type}Trend`);
+      if (trendEl) {
+        const trendText = trend > 0 ? '📈 Rising' : trend < 0 ? '📉 Falling' : '➡️ Stable';
+        trendEl.textContent = trendText;
+        trendEl.style.color = trend > 0 ? '#f59e0b' : trend < 0 ? '#4ade80' : '#6b7280';
+      }
+    } <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -16,11 +385,19 @@
       --ink:#22302a; --muted:#5b6b64; --white:#fff; --success:#4ade80; --warning:#f59e0b;
       --shadow: 0 1px 0 rgba(0,0,0,.03);
       --safe-bottom: env(safe-area-inset-bottom);
+      --gradient-primary: linear-gradient(135deg, #5a7f71 0%, #7ba390 100%);
+      --gradient-success: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
     }
     @media (prefers-color-scheme: dark){
       :root{
         --bg:#0e1512; --card:#12211b; --accent:#8bd0b1; --drop:#3a6d5b;
         --ink:#ebf3f0; --muted:#a6bbb1; --white:#0e1512; --shadow: 0 1px 0 rgba(0,0,0,.2);
+        --gradient-primary: linear-gradient(135deg, #8bd0b1 0%, #5a9d7a 100%);
+        --gradient-success: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+        --glass-bg: rgba(0, 0, 0, 0.2);
+        --glass-border: rgba(255, 255, 255, 0.1);
       }
       .tabbar{background:#0b100e;border-top-color:#1b2a24}
       .card,.timeline li{border-color:#1b2a24}
@@ -28,36 +405,168 @@
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:var(--ink);background:var(--bg)}
-    .app-header{position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:14px 16px; background:linear-gradient(180deg, var(--card), color-mix(in oklab, var(--card) 70%, transparent)); border-bottom:1px solid color-mix(in oklab, black 6%, transparent)}
+    
+    /* Premium Animations & Transitions */
+    .app-header{position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:14px 16px; background:linear-gradient(180deg, var(--card), color-mix(in oklab, var(--card) 70%, transparent)); border-bottom:1px solid color-mix(in oklab, black 6%, transparent); backdrop-filter:blur(20px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);}
+    .app-header.scrolled{box-shadow: 0 8px 32px rgba(0,0,0,0.12)}
+    
     h1{margin:0; font-size:1.1rem}
     .muted{color:var(--muted)}
-    .btn{background:none;border:1px solid color-mix(in oklab, black 8%, transparent); padding:8px 12px; border-radius:10px; color:var(--ink)}
-    .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+    
+    /* Enhanced Button System */
+    .btn{background:none;border:1px solid color-mix(in oklab, black 8%, transparent); padding:8px 12px; border-radius:10px; color:var(--ink); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; position:relative; overflow:hidden}
+    .btn::before{content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:var(--glass-bg); opacity:0; transition:opacity 0.2s ease; pointer-events:none}
+    .btn:hover{transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color:var(--accent)}
+    .btn:hover::before{opacity:1}
+    .btn:active{transform: translateY(0); transition-duration:0.1s}
+    .btn.primary{background:var(--gradient-primary); border-color:var(--accent); color:#fff; box-shadow: 0 2px 8px rgba(90, 127, 113, 0.3)}
+    .btn.primary:hover{box-shadow: 0 6px 20px rgba(90, 127, 113, 0.4); transform: translateY(-2px)}
     .btn.ghost{border:none; color:var(--accent); font-weight:700; background:transparent}
+    .btn.small{padding:4px 8px; font-size:0.8rem}
     .btn:focus-visible{outline:2px solid color-mix(in oklab, var(--accent) 70%, white); outline-offset:2px}
-    .view{display:none; padding:12px 12px calc(84px + var(--safe-bottom))} .view.active{display:block}
+    
+    /* Success Feedback Animation */
+    @keyframes successPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(74, 222, 128, 0.4); } 100% { transform: scale(1); } }
+    .success-feedback { animation: successPulse 0.4s ease-out; }
+    
+    /* Progress Animation */
+    @keyframes progressFill { from { transform: scaleX(0); transform-origin: left; } to { transform: scaleX(1); } }
+    .progress-fill { animation: progressFill 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    /* Floating Animation for Cards */
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+    .floating { animation: float 3s ease-in-out infinite; }
+    
+    /* Glass Morphism Effects */
+    .glass-card{background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.1)}
+    
+    .view{display:none; padding:12px 12px calc(84px + var(--safe-bottom))} .view.active{display:block; animation: fadeInUp 0.3s ease-out}
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
     .day-header{display:flex; justify-content:space-between; align-items:center; margin:8px 4px 12px}
     .day-cluster{display:flex; flex-direction:column; gap:4px}
     .day-name{font-size:1.1rem; font-weight:800; color:var(--accent)} .day-type{font-size:.92rem; color:var(--muted)} .streak{font-size:.9rem; color:var(--accent); font-weight:700}
     .picker{display:flex; gap:6px; flex-wrap:wrap}
-    .chip{padding:6px 10px; border-radius:999px; border:1px solid color-mix(in oklab, black 8%, transparent); background:var(--card); font-size:.85rem; cursor:pointer}
-    .chip[aria-pressed="true"]{background:var(--accent); color:#fff; border-color:var(--accent)} .today-chip{box-shadow:0 0 0 2px color-mix(in oklab, var(--accent) 50%, white)}
+    .chip{padding:6px 10px; border-radius:999px; border:1px solid color-mix(in oklab, black 8%, transparent); background:var(--card); font-size:.85rem; cursor:pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+    .chip:hover{transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1)}
+    .chip[aria-pressed="true"]{background:var(--gradient-primary); color:#fff; border-color:var(--accent); transform: translateY(-1px)} .today-chip{box-shadow:0 0 0 2px color-mix(in oklab, var(--accent) 50%, white)}
     .timeline{list-style:none; padding:0; margin:0}
-    .card, .timeline li{background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:14px; padding:14px; margin:10px 4px; box-shadow:var(--shadow)}
-    .task{display:grid; grid-template-columns: 28px 1fr; align-items:start; gap:12px} .task input[type="checkbox"]{width:22px;height:22px; accent-color:var(--accent); margin-top:2px}
-    .task label{display:block} .task-time{font-weight:800; color:var(--accent); font-size:.95rem; margin-bottom:2px} .task-title{font-weight:700; margin-bottom:2px} .task-note{color:var(--muted); font-size:.9rem; line-height:1.4}
+    .card, .timeline li{background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:14px; padding:14px; margin:10px 4px; box-shadow:var(--shadow); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+    .card:hover, .timeline li:hover{transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.1)}
+    
+    /* Enhanced Task Interface */
+    .task{display:grid; grid-template-columns: 28px 1fr; align-items:start; gap:12px} 
+    .task input[type="checkbox"]{width:22px;height:22px; accent-color:var(--accent); margin-top:2px; transition: transform 0.1s ease}
+    .task input[type="checkbox"]:checked{transform: scale(1.1)}
+    .task label{display:block; cursor:pointer} 
+    .task-time{font-weight:800; color:var(--accent); font-size:.95rem; margin-bottom:2px; cursor:pointer; padding:2px 4px; border-radius:4px; transition:all 0.2s ease}
+    .task-time:hover{background:color-mix(in oklab, var(--accent) 15%, transparent); transform: scale(1.02)}
+    .task-title{font-weight:700; margin-bottom:2px} .task-note{color:var(--muted); font-size:.9rem; line-height:1.4}
     .task-details{margin-top:8px; padding-top:8px; border-top:1px solid color-mix(in oklab, black 10%, transparent)} .workout-details{background:color-mix(in oklab, var(--accent) 12%, transparent); padding:10px; border-radius:8px}
+    
+    /* Enhanced Water & Protein */
     .water{margin:18px 4px} .water-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px} .drops{display:flex; gap:6px; flex-wrap:wrap}
-    .drop{width:24px; height:32px; border-radius:12px; background:color-mix(in oklab, var(--accent) 15%, transparent); border:1px solid color-mix(in oklab, black 8%, transparent); cursor:pointer; position:relative; transition:transform .15s ease}
-    .drop.filled{background:var(--drop); transform:scale(1.05)} .drop::after{content:""; position:absolute; top:6px; left:8px; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.9)}
-    .progress-bar{width:100%; height:8px; background:#dfe9e3; border-radius:6px; overflow:hidden; margin-top:6px} .progress-fill{height:100%; width:0; background:linear-gradient(90deg, var(--accent), var(--success)); transition:width .25s ease}
-    @media (prefers-reduced-motion: reduce){ .drop{transition:none} .progress-fill{transition:none} }
-    .stats-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:10px 4px} .stat-card{text-align:center} .stat-number{font-size:1.4rem; font-weight:800; color:var(--accent)}
-    .tabbar{position:fixed; inset-inline:0; bottom:0; z-index:101; display:flex; background:#fff; border-top:1px solid color-mix(in oklab, black 8%, transparent); padding-bottom:var(--safe-bottom)}
-    @media (prefers-color-scheme: dark){ .tabbar{background:#0b100e} }
-    .tabbar button{flex:1; padding:12px 8px; background:none; border:none; color:var(--muted); font-weight:700; font-size:.85rem} .tabbar button.active{color:var(--accent)}
-    dialog{border:none; border-radius:14px; overflow:hidden} dialog form{padding:16px} #timeForm .row{display:grid; grid-template-columns: 1fr 120px; gap:8px; margin:6px 0}
+    .drop{width:24px; height:32px; border-radius:12px; background:color-mix(in oklab, var(--accent) 15%, transparent); border:1px solid color-mix(in oklab, black 8%, transparent); cursor:pointer; position:relative; transition:all .15s cubic-bezier(0.4, 0, 0.2, 1)}
+    .drop:hover{transform: scale(1.1) translateY(-1px)}
+    .drop.filled{background:var(--drop); transform:scale(1.05)} 
+    .drop.filled:hover{transform:scale(1.15) translateY(-1px)}
+    .drop::after{content:""; position:absolute; top:6px; left:8px; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.9); transition:all 0.2s ease}
+    .drop.filled::after{animation: dropFill 0.3s ease-out}
+    @keyframes dropFill { from { transform: scale(0); } to { transform: scale(1); } }
+    
+    .progress-bar{width:100%; height:8px; background:#dfe9e3; border-radius:6px; overflow:hidden; margin-top:6px} 
+    .progress-fill{height:100%; width:0; background:var(--gradient-success); transition:width .6s cubic-bezier(0.4, 0, 0.2, 1)}
+    
+    /* Enhanced Protein Ring */
+    .protein-ring-container{position:relative; display:inline-flex; align-items:center; justify-content:center; margin:18px 4px}
+    .protein-ring{width:80px; height:80px; position:relative}
+    .protein-ring svg{width:100%; height:100%; transform:rotate(-90deg)}
+    .protein-ring-bg{fill:none; stroke:color-mix(in oklab, var(--accent) 20%, transparent); stroke-width:6}
+    .protein-ring-progress{fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; transition:all 0.6s cubic-bezier(0.4, 0, 0.2, 1)}
+    .protein-ring-center{position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; transition: all 0.2s ease}
+    .protein-ring-value{font-size:0.9rem; font-weight:800; color:var(--accent)}
+    .protein-ring-label{font-size:0.7rem; color:var(--muted)}
+    .protein-input-container{display:flex; gap:8px; align-items:center; margin-top:8px}
+    .protein-input{width:60px; padding:4px 6px; border:1px solid color-mix(in oklab, black 10%, transparent); border-radius:4px; background:var(--white); text-align:center; transition: all 0.2s ease}
+    .protein-input:focus{border-color:var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent)}
+    
+    /* Smart Suggestions */
+    .smart-suggestion{background:var(--gradient-primary); color:white; border-radius:12px; padding:12px; margin:12px 4px; box-shadow: 0 4px 16px rgba(90, 127, 113, 0.2); animation: slideInFromRight 0.5s ease-out}
+    @keyframes slideInFromRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .suggestion-header{display:flex; align-items:center; gap:8px; margin-bottom:6px; font-weight:700}
+    .suggestion-content{font-size:0.9rem; opacity:0.9; line-height:1.4}
+    .suggestion-close{background:none; border:none; color:white; opacity:0.7; cursor:pointer; font-size:1.2rem; transition:opacity 0.2s}
+    .suggestion-close:hover{opacity:1}
+    
+    /* Progress Sharing */
+    .share-card{background:var(--gradient-primary); color:white; border-radius:16px; padding:20px; margin:12px 4px; text-align:center; position:relative; overflow:hidden}
+    .share-card::before{content:''; position:absolute; top:-50%; right:-50%; width:100%; height:100%; background:radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: shimmer 3s ease-in-out infinite}
+    @keyframes shimmer { 0%, 100% { transform: translate(-100%, -100%); } 50% { transform: translate(0%, 0%); } }
+    .share-title{font-size:1.2rem; font-weight:800; margin-bottom:12px}
+    .share-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:16px 0}
+    .share-stat{text-align:center}
+    .share-stat-value{font-size:1.8rem; font-weight:800; margin-bottom:4px}
+    .share-stat-label{font-size:0.8rem; opacity:0.8}
+    .share-actions{display:flex; gap:8px; justify-content:center; margin-top:16px}
+    
+    /* Google Fit Integration */
+    .integration-card{background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:14px; padding:16px; margin:12px 4px}
+    .integration-header{display:flex; align-items:center; gap:12px; margin-bottom:12px}
+    .integration-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem}
+    .integration-status{display:flex; align-items:center; gap:6px; font-size:0.8rem}
+    .status-dot{width:8px; height:8px; border-radius:50%; background:var(--success)}
+    .status-dot.disconnected{background:var(--muted)}
+    
+    /* Advanced Charts */
+    .chart-container{position:relative; margin:12px 0}
+    .chart-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px}
+    .chart-title{font-weight:700; color:var(--ink)}
+    .chart-controls{display:flex; gap:6px}
+    .chart-control{padding:4px 8px; border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:6px; background:var(--card); font-size:0.75rem; cursor:pointer; transition:all 0.2s ease}
+    .chart-control.active, .chart-control:hover{background:var(--accent); color:white}
+    .chart-tooltip{position:absolute; background:rgba(0,0,0,0.8); color:white; padding:6px 8px; border-radius:4px; font-size:0.75rem; pointer-events:none; z-index:1000; opacity:0; transition:opacity 0.2s ease}
+    
+    @media (prefers-reduced-motion: reduce){ 
+      .drop, .progress-fill, .btn, .chip, .card { transition:none; }
+      .floating, .drop.filled::after, .success-feedback { animation:none; }
+    }
+    
+    .stats-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:10px 4px} 
+    .stat-card{text-align:center; transition: all 0.2s ease} 
+    .stat-card:hover{transform: translateY(-2px)}
+    .stat-number{font-size:1.4rem; font-weight:800; color:var(--accent); transition: all 0.3s ease}
+    
+    .tabbar{position:fixed; inset-inline:0; bottom:0; z-index:101; display:flex; background:var(--glass-bg); backdrop-filter:blur(20px); border-top:1px solid var(--glass-border); padding-bottom:var(--safe-bottom)}
+    @media (prefers-color-scheme: dark){ .tabbar{background:rgba(11, 16, 14, 0.9)} }
+    .tabbar button{flex:1; padding:12px 8px; background:none; border:none; color:var(--muted); font-weight:700; font-size:.85rem; transition: all 0.2s ease} 
+    .tabbar button:hover{color:var(--accent); transform: translateY(-1px)}
+    .tabbar button.active{color:var(--accent)}
+    
+    /* Dialog Enhancements */
+    dialog{border:none; border-radius:14px; overflow:hidden; background:var(--card); color:var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlideIn 0.3s ease-out} 
+    @keyframes modalSlideIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    dialog::backdrop{background:rgba(0,0,0,0.5); backdrop-filter: blur(4px)}
+    dialog form{padding:16px} 
+    #timeForm .row{display:grid; grid-template-columns: 1fr 120px; gap:8px; margin:6px 0}
     .today-highlight{outline:2px solid color-mix(in oklab, var(--accent) 60%, white); border-radius:12px; box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 12%, transparent) inset}
+
+    /* Enhanced Exercise Logging */
+    .exercise-log{margin:12px 4px}
+    .exercise-log-simple{margin:8px 0}
+    .exercise-entry{background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:12px; padding:12px; margin:8px 0}
+    .exercise-entry-simple{display:grid; grid-template-columns:1fr 100px 60px; gap:8px; align-items:center; background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:8px; padding:8px; margin:4px 0}
+    .exercise-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+    .exercise-name{font-weight:700; color:var(--accent)}
+    .exercise-weight-input{padding:6px; border:1px solid color-mix(in oklab, black 10%, transparent); border-radius:6px; background:var(--white); text-align:center; width:100%}
+    .pr-badge{background:color-mix(in oklab, var(--success) 20%, transparent); color:var(--success); padding:2px 6px; border-radius:999px; font-size:0.7rem; font-weight:700}
+    .sets-container{display:grid; gap:6px}
+    .set-row{display:grid; grid-template-columns:40px 1fr 1fr 1fr 40px; gap:8px; align-items:center; padding:4px 0}
+    .set-input{padding:6px; border:1px solid color-mix(in oklab, black 10%, transparent); border-radius:6px; background:var(--white); text-align:center; width:100%}
+    .add-set-btn{grid-column:1/-1; margin-top:8px}
+    .remove-set-btn{background:none; border:none; color:var(--warning); cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center}
+    .today-exercises{display:grid; gap:6px; margin-top:8px}
+    .today-exercise-item{display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:color-mix(in oklab, var(--accent) 8%, transparent); border-radius:6px; font-size:0.9rem}
+    .quick-add-container{display:flex; gap:6px; margin-top:8px}
 
     /* Resources table */
     .resource-section{margin:12px 4px}
@@ -76,6 +585,14 @@
     .pill{display:inline-block; padding:4px 8px; border-radius:999px; background:color-mix(in oklab, var(--accent) 15%, transparent); color:var(--accent); font-weight:700; font-size:.8rem}
     .section-title{display:flex; justify-content:space-between; align-items:center; gap:8px; margin:10px 4px}
     canvas{width:100%; height:200px; background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:12px}
+    
+    /* PR Display */
+    .pr-display{margin:12px 4px}
+    .pr-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px}
+    .pr-card{background:var(--card); border:1px solid color-mix(in oklab, black 8%, transparent); border-radius:12px; padding:12px; text-align:center}
+    .pr-lift{font-size:0.8rem; color:var(--muted); margin-bottom:4px}
+    .pr-value{font-size:1.2rem; font-weight:800; color:var(--accent)}
+    .pr-date{font-size:0.7rem; color:var(--muted); margin-top:4px}
   </style>
 </head>
 <body>
@@ -103,6 +620,36 @@
       <div class="streak" aria-label="Current streak"><span aria-hidden="true">🔥</span> <span id="streakCount">0</span> day streak</div>
     </div>
 
+    <!-- Smart Workout Suggestions -->
+    <div id="smartSuggestions"></div>
+
+    <!-- Google Fit Integration -->
+    <div class="integration-card" id="googleFitCard">
+      <div class="integration-header">
+        <div class="integration-icon" style="background:#4285f4; color:white">G</div>
+        <div>
+          <div style="font-weight:700">Google Fit</div>
+          <div class="integration-status">
+            <div class="status-dot" id="fitStatusDot"></div>
+            <span id="fitStatusText">Not connected</span>
+          </div>
+        </div>
+        <button class="btn small" id="connectGoogleFit" onclick="connectGoogleFit()">Connect</button>
+      </div>
+      <div id="fitData" style="display:none">
+        <div class="grid-2" style="gap:12px; margin-top:8px">
+          <div style="text-align:center">
+            <div style="font-size:1.2rem; font-weight:800; color:var(--accent)" id="todaySteps">0</div>
+            <div class="muted" style="font-size:0.8rem">Steps Today</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:1.2rem; font-weight:800; color:var(--accent)" id="weeklyAvgSteps">0</div>
+            <div class="muted" style="font-size:0.8rem">Weekly Avg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <ul id="timeline" class="timeline" aria-label="Today timeline"></ul>
 
     <section class="water" aria-labelledby="waterHeading">
@@ -112,7 +659,72 @@
       </div>
       <div id="waterDrops" class="drops" role="group" aria-label="Water cups"></div>
       <div class="progress-bar" aria-hidden="true"><div id="waterProgress" class="progress-fill"></div></div>
+      <div class="quick-add-container" style="display:flex; gap:6px; margin-top:8px; justify-content:center">
+        <button class="btn small" onclick="addQuickWater(1)">+1 glass</button>
+        <button class="btn small" onclick="addQuickWater(2)">+2 glasses</button>
+        <button class="btn small" onclick="addQuickWater(-1)">-1 glass</button>
+      </div>
     </section>
+
+    <section class="protein-ring-container" aria-labelledby="proteinHeading">
+      <div class="protein-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="protein-ring-bg" cx="50" cy="50" r="40"></circle>
+          <circle class="protein-ring-progress" cx="50" cy="50" r="40" id="proteinProgressRing"></circle>
+        </svg>
+        <div class="protein-ring-center">
+          <div class="protein-ring-value" id="proteinCurrent">0</div>
+          <div class="protein-ring-label">protein</div>
+        </div>
+      </div>
+      <div>
+        <h3 id="proteinHeading" style="margin:0 0 4px; font-size:1rem">Protein Goal</h3>
+        <div class="protein-input-container">
+          <input type="number" id="proteinGoalInput" class="protein-input" placeholder="Goal" min="50" max="300" step="5">
+          <button class="btn small" onclick="updateProteinGoal()">Set</button>
+        </div>
+        <div class="muted" style="font-size:0.8rem; margin-top:4px">
+          <span id="proteinGoalText">Set your daily goal</span>
+        </div>
+        <div class="quick-add-container" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap">
+          <button class="btn small" onclick="addQuickProtein(20)">+20g</button>
+          <button class="btn small" onclick="addQuickProtein(25)">+25g</button>
+          <button class="btn small" onclick="addQuickProtein(30)">+30g</button>
+          <button class="btn small" onclick="addQuickProtein(40)">+40g</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin:18px 4px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <h3 style="margin:0">Quick Exercise Log</h3>
+        <button class="btn small" onclick="showQuickExerciseDialog()">+ Log Lift</button>
+      </div>
+      <div id="todayExercises" class="today-exercises"></div>
+    </section>
+
+    <!-- Progress Sharing -->
+    <div class="share-card" id="progressShareCard">
+      <div class="share-title">🎯 Weekly Progress</div>
+      <div class="share-stats">
+        <div class="share-stat">
+          <div class="share-stat-value" id="shareWorkouts">5</div>
+          <div class="share-stat-label">Workouts</div>
+        </div>
+        <div class="share-stat">
+          <div class="share-stat-value" id="shareStreak">12</div>
+          <div class="share-stat-label">Day Streak</div>
+        </div>
+        <div class="share-stat">
+          <div class="share-stat-value" id="shareProtein">92%</div>
+          <div class="share-stat-label">Protein Goal</div>
+        </div>
+      </div>
+      <div class="share-actions">
+        <button class="btn" onclick="shareProgress('image')" style="background:rgba(255,255,255,0.2); color:white; border:none">📱 Share Image</button>
+        <button class="btn" onclick="shareProgress('text')" style="background:rgba(255,255,255,0.2); color:white; border:none">💬 Share Text</button>
+      </div>
+    </div>
   </main>
 
   <!-- Week View -->
@@ -121,6 +733,23 @@
       <div class="card stat-card"><div class="stat-number" id="weekCompleted">0</div><div class="muted">Days Completed</div></div>
       <div class="card stat-card"><div class="stat-number" id="weekPercentage">0%</div><div class="muted">Week Progress</div></div>
     </div>
+    
+    <!-- Weekly Body Metrics -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <h3 style="margin:0">Weekly Body Metrics</h3>
+        <div class="muted" style="font-size:0.8rem">Sunday Morning Task</div>
+      </div>
+      <div class="form" style="margin:0">
+        <div class="grid-2" style="gap:8px">
+          <div class="field" style="padding:8px"><label for="weeklyWeight">Weight (lb)</label><input id="weeklyWeight" type="number" step="0.1" inputmode="decimal"></div>
+          <div class="field" style="padding:8px"><label for="weeklyWaist">Waist (in)</label><input id="weeklyWaist" type="number" step="0.1" inputmode="decimal"></div>
+        </div>
+        <div class="field" style="padding:8px; grid-column:1/-1"><label for="weeklyHips">Hips (in)</label><input id="weeklyHips" type="number" step="0.1" inputmode="decimal"></div>
+        <button id="saveWeeklyMetrics" class="btn primary" style="margin-top:8px">Save Metrics</button>
+      </div>
+    </div>
+    
     <div id="weekOverview" class="timeline"></div>
     <div class="card">
       <h2>Weekly Schedule</h2>
@@ -133,7 +762,7 @@
   <main id="view-resources" class="view">
     <section class="card resource-section">
       <h2>4-Week Fat Loss Calendar</h2>
-      <p>You’ll have check boxes for: Dose ✔, Workout ✔, Cardio ✔, Nutrition ✔ each day.</p>
+      <p>You'll have check boxes for: Dose ✔, Workout ✔, Cardio ✔, Nutrition ✔ each day.</p>
       <p><strong>Legend:</strong> 🏋 Strength • ⚡ HIIT • 🚶 Active Recovery • ❌ Rest</p>
       <div class="table">
         <div class="row head"><div>Day</div><div>Training</div><div>Sermorelin</div><div>Cardio</div><div>Nutrition Focus</div></div>
@@ -252,18 +881,6 @@
     <div class="form" aria-label="Daily measurements and habits">
       <div class="grid-2">
         <div class="field"><label for="logDate">Date</label><input id="logDate" type="date"></div>
-        <div class="field"><label for="logWeight">Weight (lb)</label><input id="logWeight" type="number" step="0.1" inputmode="decimal"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="logWaist">Waist (in)</label><input id="logWaist" type="number" step="0.1" inputmode="decimal"></div>
-        <div class="field"><label for="logHips">Hips (in)</label><input id="logHips" type="number" step="0.1" inputmode="decimal"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="logChest">Bust/Chest (in)</label><input id="logChest" type="number" step="0.1" inputmode="decimal"></div>
-        <div class="field"><label for="logThigh">Thigh (in)</label><input id="logThigh" type="number" step="0.1" inputmode="decimal"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="logArm">Arm (in)</label><input id="logArm" type="number" step="0.1" inputmode="decimal"></div>
         <div class="field"><label for="logProtein">Protein (g)</label><input id="logProtein" type="number" step="1" inputmode="numeric"></div>
       </div>
       <div class="grid-2">
@@ -272,19 +889,9 @@
       </div>
       <div class="field"><label for="logMood">Mood / Energy (1–5)</label><input id="logMood" type="number" min="1" max="5" step="1" inputmode="numeric"></div>
 
-      <h3>Strength (top sets)</h3>
-      <div class="grid-2">
-        <div class="field"><label for="squat">Squat (lb × reps)</label><input id="squat" placeholder="e.g., 165x8"></div>
-        <div class="field"><label for="bench">Bench (lb × reps)</label><input id="bench" placeholder="e.g., 95x10"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="row">Row (lb × reps)</label><input id="row" placeholder="e.g., 95x10"></div>
-        <div class="field"><label for="ohp">Overhead Press (lb × reps)</label><input id="ohp" placeholder="e.g., 65x8"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="rdl">RDL / Deadlift (lb × reps)</label><input id="rdl" placeholder="e.g., 185x6"></div>
-        <div class="field"><label for="hip">Hip Thrust (lb × reps)</label><input id="hip" placeholder="e.g., 185x10"></div>
-      </div>
+      <h3>Exercise Max Weight Log</h3>
+      <div id="exerciseLog" class="exercise-log-simple"></div>
+      <button id="addExerciseBtn" class="btn" style="margin:8px 0">Add Exercise</button>
     </div>
 
     <div class="section-title">
@@ -306,16 +913,61 @@
       <span id="progressBadges"></span>
     </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 8px">Weight Trend</h3>
-      <canvas id="chartWeight" width="400" height="220" aria-label="Weight chart"></canvas>
-      <div class="muted" style="margin-top:6px"><span class="badge" id="weightChange">—</span></div>
+    <div class="pr-display">
+      <h3>Personal Records</h3>
+      <div id="prGrid" class="pr-grid"></div>
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 8px">Waist Trend</h3>
-      <canvas id="chartWaist" width="400" height="220" aria-label="Waist chart"></canvas>
-      <div class="muted" style="margin-top:6px"><span class="badge" id="waistChange">—</span></div>
+      <div class="chart-header">
+        <h3 class="chart-title">Weight Trend</h3>
+        <div class="chart-controls">
+          <button class="chart-control active" onclick="setChartTimeframe('weight', '7d')">7D</button>
+          <button class="chart-control" onclick="setChartTimeframe('weight', '30d')">30D</button>
+          <button class="chart-control" onclick="setChartTimeframe('weight', '90d')">90D</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="chartWeight" width="400" height="220" aria-label="Weight chart"></canvas>
+        <div class="chart-tooltip" id="weightTooltip"></div>
+      </div>
+      <div class="muted" style="margin-top:6px">
+        <span class="badge" id="weightChange">—</span>
+        <span class="badge" style="margin-left:6px" id="weightTrend">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h3 class="chart-title">Body Composition</h3>
+        <div class="chart-controls">
+          <button class="chart-control active" onclick="setChartTimeframe('body', '7d')">7D</button>
+          <button class="chart-control" onclick="setChartTimeframe('body', '30d')">30D</button>
+          <button class="chart-control" onclick="setChartTimeframe('body', '90d')">90D</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="chartBody" width="400" height="220" aria-label="Body measurements chart"></canvas>
+        <div class="chart-tooltip" id="bodyTooltip"></div>
+      </div>
+      <div class="muted" style="margin-top:6px">
+        <span class="badge" id="waistChange">—</span>
+        <span class="badge" style="margin-left:6px" id="hipsChange">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h3 class="chart-title">Performance Metrics</h3>
+        <div class="chart-controls">
+          <button class="chart-control active" onclick="setChartTimeframe('performance', '30d')">30D</button>
+          <button class="chart-control" onclick="setChartTimeframe('performance', '90d')">90D</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="chartPerformance" width="400" height="220" aria-label="Performance metrics chart"></canvas>
+        <div class="chart-tooltip" id="performanceTooltip"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -336,6 +988,55 @@
     <button data-target="view-log" aria-controls="view-log" aria-selected="false">Log</button>
     <button data-target="view-progress" aria-controls="view-progress" aria-selected="false">Progress</button>
   </nav>
+
+  <!-- Time Edit Dialog -->
+  <dialog id="timeEditDialog">
+    <form method="dialog">
+      <h3>Edit Time</h3>
+      <div class="row">
+        <label for="timeInput">Time:</label>
+        <input id="timeInput" type="time" required>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
+        <button type="button" class="btn" onclick="closeTimeDialog()">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Exercise Dialog -->
+  <dialog id="exerciseDialog">
+    <form method="dialog">
+      <h3>Add Exercise</h3>
+      <div class="row">
+        <label for="exerciseNameInput">Exercise:</label>
+        <input id="exerciseNameInput" type="text" required placeholder="e.g., Bench Press">
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
+        <button type="button" class="btn" onclick="closeExerciseDialog()">Cancel</button>
+        <button type="submit" class="btn primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Quick Exercise Dialog -->
+  <dialog id="quickExerciseDialog">
+    <form method="dialog">
+      <h3>Quick Exercise Log</h3>
+      <div class="row" style="margin:8px 0">
+        <label for="quickExerciseName">Exercise:</label>
+        <input id="quickExerciseName" type="text" required placeholder="e.g., Bench Press">
+      </div>
+      <div class="row" style="margin:8px 0">
+        <label for="quickExerciseWeight">Max Weight (lbs):</label>
+        <input id="quickExerciseWeight" type="number" required placeholder="135" step="0.5">
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
+        <button type="button" class="btn" onclick="closeQuickExerciseDialog()">Cancel</button>
+        <button type="submit" class="btn primary">Log</button>
+      </div>
+    </form>
+  </dialog>
 
   <script>
     const WEEKLY_SCHEDULE = {
@@ -412,18 +1113,290 @@
         {key:"sleep",time:"22:00",title:"Wind Down",note:"No food 2 hrs before bed"}
       ]}
     };
-    const ICONS={strength:"🏋️",hiit:"⚡",recovery:"🚶",rest:"😴"}; const DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    
+    const ICONS={strength:"🏋️",hiit:"⚡",recovery:"🚶",rest:"😴"}; 
+    const DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    let currentEditingTime = null;
+    let currentEditingExerciseId = null;
+    let googleFitConnected = false;
+    let chartTimeframes = { weight: '7d', body: '7d', performance: '30d' };
+
+    // ---- Google Fit Integration ----
+    async function connectGoogleFit() {
+      try {
+        // Simulate Google Fit connection (in real implementation, use Google Fit API)
+        const btn = document.getElementById('connectGoogleFit');
+        btn.textContent = 'Connecting...';
+        btn.disabled = true;
+        
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        googleFitConnected = true;
+        updateGoogleFitUI();
+        
+        // Simulate fetching step data
+        const s = loadState();
+        if (!s.googleFitData) s.googleFitData = {};
+        
+        // Generate realistic step data for demo
+        const today = todayKey();
+        const baseSteps = 8000;
+        s.googleFitData[today] = Math.floor(baseSteps + (Math.random() * 4000));
+        
+        // Generate weekly data
+        for (let i = 1; i <= 7; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateKey = date.toISOString().slice(0, 10);
+          s.googleFitData[dateKey] = Math.floor(baseSteps + (Math.random() * 4000));
+        }
+        
+        saveState(s);
+        updateStepData();
+        
+      } catch (error) {
+        console.error('Google Fit connection failed:', error);
+        document.getElementById('connectGoogleFit').textContent = 'Connect';
+        document.getElementById('connectGoogleFit').disabled = false;
+      }
+    }
+
+    function updateGoogleFitUI() {
+      const statusDot = document.getElementById('fitStatusDot');
+      const statusText = document.getElementById('fitStatusText');
+      const connectBtn = document.getElementById('connectGoogleFit');
+      const fitData = document.getElementById('fitData');
+      
+      if (googleFitConnected) {
+        statusDot.classList.remove('disconnected');
+        statusText.textContent = 'Connected';
+        connectBtn.style.display = 'none';
+        fitData.style.display = 'block';
+      } else {
+        statusDot.classList.add('disconnected');
+        statusText.textContent = 'Not connected';
+        connectBtn.style.display = 'block';
+        fitData.style.display = 'none';
+      }
+    }
+
+    function updateStepData() {
+      const s = loadState();
+      const today = todayKey();
+      const todaySteps = s.googleFitData?.[today] || 0;
+      
+      // Calculate weekly average
+      let totalSteps = 0;
+      let daysWithData = 0;
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().slice(0, 10);
+        if (s.googleFitData?.[dateKey]) {
+          totalSteps += s.googleFitData[dateKey];
+          daysWithData++;
+        }
+      }
+      
+      const weeklyAvg = daysWithData > 0 ? Math.floor(totalSteps / daysWithData) : 0;
+      
+      document.getElementById('todaySteps').textContent = todaySteps.toLocaleString();
+      document.getElementById('weeklyAvgSteps').textContent = weeklyAvg.toLocaleString();
+    }
+
+    // ---- Smart Workout Suggestions ----
+    function generateWorkoutSuggestions() {
+      const s = loadState();
+      const dow = getDow();
+      const today = todayKey();
+      const checks = s.checks[today] || {};
+      const plan = WEEKLY_SCHEDULE[dow];
+      
+      const suggestions = [];
+      
+      // Check if workout is incomplete
+      const workoutCompleted = checks[`${dow}-workout`];
+      const currentHour = new Date().getHours();
+      
+      if (!workoutCompleted && currentHour >= 6 && currentHour <= 10) {
+        suggestions.push({
+          icon: '🏋️',
+          title: 'Time for your workout!',
+          content: `Today's ${plan.type.toLowerCase()} session is scheduled. Perfect time to get started!`,
+          type: 'workout'
+        });
+      }
+      
+      // Hydration reminder
+      const waterCount = s.water[today] || 0;
+      const waterGoal = s.waterGoal || 8;
+      if (waterCount < Math.floor(waterGoal * 0.5) && currentHour >= 12) {
+        suggestions.push({
+          icon: '💧',
+          title: 'Stay hydrated!',
+          content: `You're at ${waterCount}/${waterGoal} glasses today. Your body needs more water!`,
+          type: 'hydration'
+        });
+      }
+      
+      // Protein intake suggestion
+      const proteinIntake = s.logs[today]?.protein || 0;
+      const proteinGoal = s.proteinGoal || 120;
+      if (proteinIntake < Math.floor(proteinGoal * 0.6) && currentHour >= 14) {
+        suggestions.push({
+          icon: '🥩',
+          title: 'Protein boost needed',
+          content: `You've had ${proteinIntake}g of ${proteinGoal}g protein today. Consider a protein-rich snack!`,
+          type: 'protein'
+        });
+      }
+      
+      // Streak motivation
+      const streak = s.streak || 0;
+      if (streak >= 7 && streak % 7 === 0) {
+        suggestions.push({
+          icon: '🔥',
+          title: 'Amazing streak!',
+          content: `${streak} days strong! You're building incredible habits. Keep it up!`,
+          type: 'motivation'
+        });
+      }
+      
+      return suggestions;
+    }
+
+    function renderSmartSuggestions() {
+      const container = document.getElementById('smartSuggestions');
+      const suggestions = generateWorkoutSuggestions();
+      
+      container.innerHTML = '';
+      
+      suggestions.forEach((suggestion, index) => {
+        const suggestionEl = document.createElement('div');
+        suggestionEl.className = 'smart-suggestion';
+        suggestionEl.style.animationDelay = `${index * 0.1}s`;
+        
+        suggestionEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start">
+            <div class="suggestion-header">
+              <span style="font-size:1.2rem">${suggestion.icon}</span>
+              <span>${suggestion.title}</span>
+            </div>
+            <button class="suggestion-close" onclick="dismissSuggestion(this)">&times;</button>
+          </div>
+          <div class="suggestion-content">${suggestion.content}</div>
+        `;
+        
+        container.appendChild(suggestionEl);
+      });
+    }
+
+    function dismissSuggestion(button) {
+      const suggestion = button.closest('.smart-suggestion');
+      suggestion.style.animation = 'slideOutToRight 0.3s ease-out forwards';
+      setTimeout(() => suggestion.remove(), 300);
+    }
+
+    // ---- Progress Sharing ----
+    function updateShareCard() {
+      const s = loadState();
+      const streak = s.streak || 0;
+      
+      // Calculate week's workouts
+      let weekWorkouts = 0;
+      const start = new Date(s.weekStart);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dateKey = d.toISOString().slice(0, 10);
+        const checks = s.checks[dateKey] || {};
+        const completed = Object.values(checks).filter(Boolean).length;
+        if (completed >= 3) weekWorkouts++; // Consider day complete if 3+ tasks done
+      }
+      
+      // Calculate protein goal achievement
+      let proteinDays = 0;
+      let proteinGoalDays = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dateKey = d.toISOString().slice(0, 10);
+        const protein = s.logs[dateKey]?.protein || 0;
+        if (protein > 0) proteinDays++;
+        if (protein >= (s.proteinGoal || 120) * 0.8) proteinGoalDays++;
+      }
+      
+      const proteinPercentage = proteinDays > 0 ? Math.round((proteinGoalDays / proteinDays) * 100) : 0;
+      
+      document.getElementById('shareWorkouts').textContent = weekWorkouts;
+      document.getElementById('shareStreak').textContent = streak;
+      document.getElementById('shareProtein').textContent = `${proteinPercentage}%`;
+    }
+
+    async function shareProgress(type) {
+      const s = loadState();
+      const streak = s.streak || 0;
+      const weekWorkouts = document.getElementById('shareWorkouts').textContent;
+      const proteinPercent = document.getElementById('shareProtein').textContent;
+      
+      if (type === 'text') {
+        const shareText = `💪 My fitness progress this week:\n🏋️ ${weekWorkouts}/7 workouts completed\n🔥 ${streak}-day streak\n🥩 ${proteinPercent} protein goal achievement\n\nStaying consistent with my health journey! 💯`;
+        
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'My Fitness Progress',
+              text: shareText
+            });
+          } catch (err) {
+            // Fallback to clipboard
+            navigator.clipboard.writeText(shareText);
+            showSuccessFeedback('Progress copied to clipboard!');
+          }
+        } else {
+          navigator.clipboard.writeText(shareText);
+          showSuccessFeedback('Progress copied to clipboard!');
+        }
+      } else if (type === 'image') {
+        // For image sharing, we'd generate a canvas-based image
+        showSuccessFeedback('Image sharing coming soon!');
+      }
+    }
+
+    function showSuccessFeedback(message) {
+      const feedback = document.createElement('div');
+      feedback.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        background: var(--gradient-success); color: white; padding: 12px 16px;
+        border-radius: 8px; font-weight: 700; animation: slideInFromRight 0.3s ease-out;
+      `;
+      feedback.textContent = message;
+      document.body.appendChild(feedback);
+      
+      setTimeout(() => {
+        feedback.style.animation = 'slideOutToRight 0.3s ease-out forwards';
+        setTimeout(() => feedback.remove(), 300);
+      }, 3000);
+    }
 
     // ---- State helpers ----
     function loadState(){ try{return JSON.parse(localStorage.getItem("mfl_state_v23b")||"{}")}catch(e){return {}}}
     function saveState(s){ localStorage.setItem("mfl_state_v23b", JSON.stringify(s)) }
     function todayKey(){ return new Date().toISOString().slice(0,10) }
     function getDow(){ return Number(document.querySelector('.chip[aria-pressed="true"]')?.dataset.day ?? new Date().getDay()) }
-    function toHuman(hm){ if(!hm||hm.includes(':')===false) return hm; const [h,m]=hm.split(':').map(Number); const d=new Date(); d.setHours(h); d.setMinutes(m); return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) }
+    
+    function toHuman(hm){ 
+      if(!hm||hm.includes(':')===false) return hm; 
+      const [h,m]=hm.split(':').map(Number); 
+      const d=new Date(); d.setHours(h); d.setMinutes(m); 
+      return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) 
+    }
 
     function initDefaults(){
       const s=loadState();
       if(!s.waterGoal) s.waterGoal=8;
+      if(!s.proteinGoal) s.proteinGoal=120;
       if(!s.water) s.water={};
       if(!s.checks) s.checks={}; // dateKey -> { itemKey: true }
       if(!s.streak) s.streak=0;
@@ -432,7 +1405,319 @@
       }
       if(!s.logs) s.logs={};
       if(!s.prs) s.prs={};
+      if(!s.exercises) s.exercises={};
+      if(!s.customTimes) s.customTimes={};
       saveState(s);
+    }
+
+    // ---- Protein Ring Functions ----
+    function updateProteinRing() {
+      const s = loadState();
+      const dk = todayKey();
+      const current = s.logs[dk]?.protein || 0;
+      const goal = s.proteinGoal || 120;
+      const percentage = Math.min((current / goal) * 100, 100);
+      
+      document.getElementById('proteinCurrent').textContent = current + 'g';
+      document.getElementById('proteinGoalText').textContent = `Goal: ${goal}g (${Math.round(percentage)}%)`;
+      
+      const ring = document.getElementById('proteinProgressRing');
+      const circumference = 2 * Math.PI * 40;
+      const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+      ring.style.strokeDasharray = strokeDasharray;
+    }
+
+    function updateProteinGoal() {
+      const goal = parseInt(document.getElementById('proteinGoalInput').value);
+      if (goal && goal >= 50 && goal <= 300) {
+        const s = loadState();
+        s.proteinGoal = goal;
+        saveState(s);
+        updateProteinRing();
+        document.getElementById('proteinGoalInput').value = '';
+      }
+    }
+
+    // ---- Time Editing Functions ----
+    function editTime(dow, itemKey, currentTime) {
+      currentEditingTime = { dow, itemKey, currentTime };
+      document.getElementById('timeInput').value = currentTime;
+      document.getElementById('timeEditDialog').showModal();
+    }
+
+    function closeTimeDialog() {
+      document.getElementById('timeEditDialog').close();
+      currentEditingTime = null;
+    }
+
+    function saveTimeEdit() {
+      if (!currentEditingTime) return;
+      
+      const newTime = document.getElementById('timeInput').value;
+      const { dow, itemKey } = currentEditingTime;
+      
+      const s = loadState();
+      if (!s.customTimes) s.customTimes = {};
+      if (!s.customTimes[dow]) s.customTimes[dow] = {};
+      s.customTimes[dow][itemKey] = newTime;
+      saveState(s);
+      
+      renderTimeline();
+      closeTimeDialog();
+    }
+
+    // ---- Quick Add Functions ----
+    function addQuickProtein(amount) {
+      const s = loadState();
+      const dk = todayKey();
+      if (!s.logs[dk]) s.logs[dk] = {};
+      const current = s.logs[dk].protein || 0;
+      s.logs[dk].protein = current + amount;
+      saveState(s);
+      updateProteinRing();
+      
+      // Update log input if on log page
+      const proteinInput = document.getElementById('logProtein');
+      if (proteinInput && proteinInput.closest('.view').classList.contains('active')) {
+        proteinInput.value = s.logs[dk].protein;
+      }
+    }
+
+    function addQuickWater(glasses) {
+      const s = loadState();
+      const dk = todayKey();
+      const current = s.water[dk] || 0;
+      const newAmount = Math.max(0, Math.min(current + glasses, s.waterGoal));
+      s.water[dk] = newAmount;
+      saveState(s);
+      renderWater();
+      updateProgress();
+    }
+
+    function showQuickExerciseDialog() {
+      document.getElementById('quickExerciseDialog').showModal();
+    }
+
+    function closeQuickExerciseDialog() {
+      document.getElementById('quickExerciseDialog').close();
+    }
+
+    function saveQuickExercise() {
+      const exerciseName = document.getElementById('quickExerciseName').value.trim();
+      const weight = parseFloat(document.getElementById('quickExerciseWeight').value);
+      
+      if (!exerciseName || !weight) return;
+      
+      const s = loadState();
+      const dk = todayKey();
+      
+      if (!s.logs[dk]) s.logs[dk] = {};
+      if (!s.logs[dk].exercises) s.logs[dk].exercises = {};
+      
+      const exerciseId = exerciseName.toLowerCase().replace(/\s+/g, '_');
+      s.logs[dk].exercises[exerciseId] = {
+        name: exerciseName,
+        maxWeight: weight
+      };
+      
+      // Update PR if this is a new record
+      if (!s.prs) s.prs = {};
+      if (!s.prs[exerciseId] || weight > (s.prs[exerciseId].maxWeight || 0)) {
+        s.prs[exerciseId] = {
+          name: exerciseName,
+          maxWeight: weight,
+          date: dk
+        };
+      }
+      
+      saveState(s);
+      renderTodayExercises();
+      document.getElementById('quickExerciseName').value = '';
+      document.getElementById('quickExerciseWeight').value = '';
+      closeQuickExerciseDialog();
+    }
+
+    function renderTodayExercises() {
+      const s = loadState();
+      const dk = todayKey();
+      const container = document.getElementById('todayExercises');
+      
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      const todayExercises = s.logs[dk]?.exercises || {};
+      
+      if (Object.keys(todayExercises).length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center; padding:12px; font-size:0.9rem">No exercises logged today</div>';
+        return;
+      }
+      
+      Object.entries(todayExercises).forEach(([id, exercise]) => {
+        const isPR = s.prs[id] && s.prs[id].maxWeight === exercise.maxWeight && s.prs[id].date === dk;
+        
+        const item = document.createElement('div');
+        item.className = 'today-exercise-item';
+        item.innerHTML = `
+          <span>${exercise.name}</span>
+          <span style="display:flex; align-items:center; gap:6px">
+            <strong>${exercise.maxWeight} lbs</strong>
+            ${isPR ? '<span class="pr-badge">PR!</span>' : ''}
+          </span>
+        `;
+        container.appendChild(item);
+      });
+    }
+    function addExercise() {
+      document.getElementById('exerciseDialog').showModal();
+    }
+
+    function closeExerciseDialog() {
+      document.getElementById('exerciseDialog').close();
+    }
+
+    function saveNewExercise() {
+      const exerciseName = document.getElementById('exerciseNameInput').value.trim();
+      if (!exerciseName) return;
+      
+      const exerciseId = Date.now().toString();
+      renderExerciseEntry(exerciseId, exerciseName, []);
+      document.getElementById('exerciseNameInput').value = '';
+      closeExerciseDialog();
+    }
+
+    function renderExerciseEntry(exerciseId, exerciseName, maxWeight = '') {
+      const container = document.getElementById('exerciseLog');
+      const entry = document.createElement('div');
+      entry.className = 'exercise-entry-simple';
+      entry.id = `exercise-${exerciseId}`;
+      
+      entry.innerHTML = `
+        <input type="text" class="exercise-weight-input" value="${exerciseName}" placeholder="Exercise name" onchange="updateExerciseName('${exerciseId}', this.value)">
+        <input type="number" class="exercise-weight-input" value="${maxWeight}" placeholder="Max weight" step="0.5" onchange="updateExerciseWeight('${exerciseId}', this.value)">
+        <button class="btn small" onclick="removeExercise('${exerciseId}')" style="background:var(--warning); color:white">×</button>
+      `;
+      
+      container.appendChild(entry);
+    }
+
+    function updateExerciseName(exerciseId, name) {
+      // Update will be handled when saving
+    }
+
+    function updateExerciseWeight(exerciseId, weight) {
+      // Update will be handled when saving
+    }
+
+    function addSet(exerciseId, setData = null) {
+      const container = document.getElementById(`sets-${exerciseId}`);
+      const setIndex = container.children.length; // -1 for header, but +1 for new set = 0 net change
+      
+      const setRow = document.createElement('div');
+      setRow.className = 'set-row';
+      setRow.innerHTML = `
+        <div>${setIndex}</div>
+        <input type="number" class="set-input" placeholder="0" step="0.5" value="${setData?.weight || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'weight', this.value)">
+        <input type="number" class="set-input" placeholder="0" step="1" value="${setData?.reps || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'reps', this.value)">
+        <input type="number" class="set-input" placeholder="0" min="1" max="10" step="0.5" value="${setData?.rpe || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'rpe', this.value)">
+        <button class="remove-set-btn" onclick="removeSet('${exerciseId}', ${setIndex - 1})">×</button>
+      `;
+      
+      container.appendChild(setRow);
+    }
+
+    function removeSet(exerciseId, setIndex) {
+      const container = document.getElementById(`sets-${exerciseId}`);
+      if (container.children.length > 2) { // Keep at least header + 1 set
+        container.children[setIndex + 1].remove(); // +1 to account for header
+        updateSetNumbers(exerciseId);
+      }
+    }
+
+    function updateSetNumbers(exerciseId) {
+      const container = document.getElementById(`sets-${exerciseId}`);
+      Array.from(container.children).forEach((row, index) => {
+        if (index > 0) { // Skip header
+          row.children[0].textContent = index;
+        }
+      });
+    }
+
+    function removeExercise(exerciseId) {
+      document.getElementById(`exercise-${exerciseId}`).remove();
+    }
+
+    function updateSetData(exerciseId, setIndex, field, value) {
+      // This could be used to auto-calculate PRs or save data in real-time
+      // For now, data will be saved when the save button is clicked
+    }
+
+    function getExerciseData() {
+      const exercises = {};
+      const exerciseEntries = document.querySelectorAll('.exercise-entry-simple');
+      
+      exerciseEntries.forEach((entry, index) => {
+        const exerciseId = entry.id.replace('exercise-', '') || `exercise_${index}`;
+        const inputs = entry.querySelectorAll('.exercise-weight-input');
+        const exerciseName = inputs[0].value.trim();
+        const maxWeight = parseFloat(inputs[1].value) || 0;
+        
+        if (exerciseName && maxWeight > 0) {
+          exercises[exerciseId] = {
+            name: exerciseName,
+            maxWeight: maxWeight
+          };
+        }
+      });
+      
+      return exercises;
+    }
+
+    function calculatePRs(exercises) {
+      const prs = {};
+      
+      Object.values(exercises).forEach(exercise => {
+        const { name, maxWeight } = exercise;
+        const exerciseId = name.toLowerCase().replace(/\s+/g, '_');
+        
+        prs[exerciseId] = {
+          name: name,
+          maxWeight: maxWeight,
+          date: todayKey()
+        };
+      });
+      
+      return prs;
+    }
+
+    // ---- Weekly Metrics Functions ----
+    function saveWeeklyMetrics() {
+      const weight = parseFloat(document.getElementById('weeklyWeight').value);
+      const waist = parseFloat(document.getElementById('weeklyWaist').value);
+      const hips = parseFloat(document.getElementById('weeklyHips').value);
+      
+      if (!weight && !waist && !hips) {
+        alert('Please enter at least one measurement');
+        return;
+      }
+      
+      const s = loadState();
+      const dk = todayKey();
+      
+      if (!s.logs[dk]) s.logs[dk] = {};
+      if (weight) s.logs[dk].weight = weight;
+      if (waist) s.logs[dk].waist = waist;
+      if (hips) s.logs[dk].hips = hips;
+      
+      saveState(s);
+      
+      // Clear inputs
+      document.getElementById('weeklyWeight').value = '';
+      document.getElementById('weeklyWaist').value = '';
+      document.getElementById('weeklyHips').value = '';
+      
+      alert('Weekly metrics saved! ✔');
+      renderProgress();
     }
 
     // ---- Rendering Today ----
@@ -445,15 +1730,23 @@
       const weekNum = Math.floor(diffDays/7)+1; document.getElementById('weekLabel').textContent = `Week ${Math.max(1, weekNum)}`;
     }
 
+    function getTimeForItem(dow, itemKey, defaultTime) {
+      const s = loadState();
+      return s.customTimes?.[dow]?.[itemKey] || defaultTime;
+    }
+
     function renderTimeline(){
       const timeline=document.getElementById('timeline'); timeline.innerHTML='';
       const s=loadState(); const dk=todayKey(); const checks=s.checks[dk]||{}; const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow].schedule;
+      
       plan.forEach(item=>{
         const li=document.createElement('li'); const div=document.createElement('div'); div.className='task';
         const id=`${dow}-${item.key}`; const cb=document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked=!!checks[id];
         cb.addEventListener('change',()=>{ const st=loadState(); st.checks[dk]=st.checks[dk]||{}; st.checks[dk][id]=cb.checked; saveState(st); updateProgress(); renderWeek(); });
+        
+        const currentTime = getTimeForItem(dow, item.key, item.time);
         const lbl=document.createElement('label'); lbl.setAttribute('for', id);
-        lbl.innerHTML = `<div class="task-time">${toHuman(item.time)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>${item.details?`<div class="task-details"><div class="workout-details"><strong>Workout Details:</strong><br>${item.details}</div></div>`:''}`;
+        lbl.innerHTML = `<div class="task-time" onclick="editTime(${dow}, '${item.key}', '${currentTime}')">${toHuman(currentTime)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>${item.details?`<div class="task-details"><div class="workout-details"><strong>Workout Details:</strong><br>${item.details}</div></div>`:''}`;
         div.append(cb,lbl); li.append(div); timeline.append(li);
       });
     }
@@ -475,9 +1768,10 @@
         const row=document.createElement('li'); row.className='card'; if(new Date().toDateString()===d.toDateString()){ row.classList.add('today-highlight'); }
         row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><strong>${DAY_NAMES[dow]}</strong> • ${ICONS[plan.workoutType]} ${plan.type} • ${plan.dose?'Dose':'No dose'}</div><div style="min-width:46px;text-align:right"><strong>${Math.round(pct*100)}%</strong></div></div><div class="progress-bar"><div class="progress-fill" style="width:${(pct*100).toFixed(0)}%"></div></div>`;
         weekOverview.append(row);
+        
         const sched=document.createElement('div'); sched.className='card'; if(new Date().toDateString()===d.toDateString()){ sched.classList.add('today-highlight'); }
         sched.innerHTML=`<h3 style="margin:0 0 6px">${DAY_NAMES[dow]} – ${plan.type}</h3>`;
-        plan.schedule.forEach(item=>{ const line=document.createElement('div'); line.className='muted'; line.style.margin='2px 0'; line.textContent = `${toHuman(item.time)} • ${item.title}`; sched.append(line); });
+        plan.schedule.forEach(item=>{ const line=document.createElement('div'); line.className='muted'; line.style.margin='2px 0'; line.textContent = `${toHuman(getTimeForItem(dow, item.key, item.time))} • ${item.title}`; sched.append(line); });
         weekSchedule.append(sched);
         if(pct>=0.9) doneDays++;
       }
@@ -501,33 +1795,52 @@
       set('logDate', dateKey);
       set('logWeight', L.weight); set('logWaist', L.waist); set('logHips', L.hips); set('logChest', L.chest); set('logThigh', L.thigh); set('logArm', L.arm);
       set('logProtein', L.protein); set('logSleep', L.sleep); set('logSteps', L.steps); set('logMood', L.mood);
-      const lifts=L.lifts||{}; ['squat','bench','row','ohp','rdl','hip'].forEach(k=>{ set(k, lifts[k]||''); });
-    }
-
-    function parseTopSet(s){ if(!s) return null; const m=String(s).toLowerCase().replace('×','x').match(/(\\d+)\\s*x\\s*(\\d+)/); if(!m) return null; return {w:parseFloat(m[1]), r:parseFloat(m[2])}; }
-    function e1rm(w,r){ if(!w||!r) return 0; return w*(1+r/30); }
-    function updatePRsFor(dateKey, L){
-      const s=loadState(); s.prs=s.prs||{}; const lifts=L.lifts||{};
-      for(const [name,val] of Object.entries(lifts)){
-        const tr=parseTopSet(val); if(!tr) continue; const est=e1rm(tr.w,tr.r);
-        if(!s.prs[name] || est > s.prs[name]){ s.prs[name]=est; }
+      
+      // Load exercises for this date
+      const exerciseLog = document.getElementById('exerciseLog');
+      exerciseLog.innerHTML = '';
+      if (L.exercises) {
+        Object.entries(L.exercises).forEach(([exerciseId, exercise]) => {
+          renderExerciseEntry(exerciseId, exercise.name, exercise.sets);
+        });
       }
-      saveState(s);
+      
+      updateProteinRing();
     }
 
     function saveLog(){
       const dateKey=document.getElementById('logDate').value || todayISO();
       const get=(id)=>{ const v=document.getElementById(id).value; return v===''?undefined:(isNaN(v)?v:parseFloat(v)); };
-      const lifts={}; ['squat','bench','row','ohp','rdl','hip'].forEach(k=>{ const v=document.getElementById(k).value.trim(); if(v) lifts[k]=v; });
+      
+      const exercises = getExerciseData();
+      const prs = calculatePRs(exercises);
+      
       const L={ weight:get('logWeight'), waist:get('logWaist'), hips:get('logHips'), chest:get('logChest'), thigh:get('logThigh'), arm:get('logArm'),
-                protein:get('logProtein'), sleep:get('logSleep'), steps:get('logSteps'), mood:get('logMood'), lifts:lifts };
-      const s=loadState(); s.logs[dateKey]=Object.assign({}, s.logs[dateKey]||{}, L); saveState(s); updatePRsFor(dateKey, L); alert('Saved ✔'); renderProgress();
+                protein:get('logProtein'), sleep:get('logSleep'), steps:get('logSteps'), mood:get('logMood'), exercises: exercises };
+      
+      const s=loadState(); 
+      s.logs[dateKey]=Object.assign({}, s.logs[dateKey]||{}, L); 
+      
+      // Update PRs
+      if (!s.prs) s.prs = {};
+      Object.entries(prs).forEach(([key, pr]) => {
+        if (!s.prs[key] || pr.maxWeight > (s.prs[key].maxWeight || 0)) {
+          s.prs[key] = pr;
+        }
+      });
+      
+      saveState(s); 
+      updateProteinRing();
+      alert('Saved ✔'); 
+      renderProgress();
     }
 
     function initLog(){
       const d=todayISO(); document.getElementById('logDate').value=d; loadLog(d);
       document.getElementById('logDate').addEventListener('change', e=>loadLog(e.target.value));
       document.getElementById('saveLogBtn').addEventListener('click', saveLog);
+      document.getElementById('addExerciseBtn').addEventListener('click', addExercise);
+      
       document.getElementById('exportBtn').addEventListener('click', ()=>{
         const data = loadState();
         const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -560,14 +1873,35 @@
     function calcChange(arr){ if(arr.length<2) return '—'; const first=arr[0].y, last=arr[arr.length-1].y; const diff = last-first; const sign = diff>0?'+':''; return `${sign}${diff.toFixed(1)}`; }
     function getLogsSorted(){ const s=loadState(); const entries=Object.entries(s.logs||{}).sort((a,b)=>new Date(a[0])-new Date(b[0])); return entries; }
 
+    function renderPRs() {
+      const s = loadState();
+      const prGrid = document.getElementById('prGrid');
+      prGrid.innerHTML = '';
+      
+      if (!s.prs || Object.keys(s.prs).length === 0) {
+        prGrid.innerHTML = '<div class="muted" style="grid-column: 1/-1; text-align: center; padding: 20px;">No personal records yet. Start logging workouts!</div>';
+        return;
+      }
+      
+      Object.entries(s.prs).forEach(([key, pr]) => {
+        const card = document.createElement('div');
+        card.className = 'pr-card';
+        card.innerHTML = `
+          <div class="pr-lift">${pr.name}</div>
+          <div class="pr-value">${pr.maxWeight} lb</div>
+          <div class="pr-date">${new Date(pr.date).toLocaleDateString()}</div>
+        `;
+        prGrid.appendChild(card);
+      });
+    }
+
     function renderProgress(){
       const entries=getLogsSorted();
-      const wPts = entries.filter(([d,L])=>L.weight!=null).map(([d,L])=>({x:daysSinceEpoch(d), y:Number(L.weight)}));
-      drawLineChart('chartWeight', wPts, getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
-      document.getElementById('weightChange').textContent = wPts.length?`Δ ${calcChange(wPts)} lb`:'—';
-      const waistPts = entries.filter(([d,L])=>L.waist!=null).map(([d,L])=>({x:daysSinceEpoch(d), y:Number(L.waist)}));
-      drawLineChart('chartWaist', waistPts, getComputedStyle(document.documentElement).getPropertyValue('--drop').trim());
-      document.getElementById('waistChange').textContent = waistPts.length?`Δ ${calcChange(waistPts)} in`:'—';
+      
+      // Render advanced charts
+      renderAdvancedWeightChart();
+      renderBodyCompositionChart();  
+      renderPerformanceChart();
 
       const s=loadState(); const start=new Date(s.weekStart); const end=new Date(start); end.setDate(start.getDate()+7);
       let workouts=0, protein=0, proteinDays=0, sleep=0, sleepDays=0, water=0, waterDays=0;
@@ -586,8 +1920,7 @@
       document.getElementById('sumSleep').textContent = sleepDays? (sleep/sleepDays).toFixed(1)+' h' : '—';
       document.getElementById('sumWater').textContent = waterDays? (water/waterDays).toFixed(1)+' cups' : '—';
 
-      const prs = loadState().prs||{}; const wrap=document.getElementById('progressBadges'); wrap.innerHTML='';
-      Object.entries(prs).forEach(([lift,val])=>{ const b=document.createElement('span'); b.className='badge'; b.style.marginRight='6px'; b.textContent=`PR ${lift.toUpperCase()}: ${Math.round(val)} (est 1RM)`; wrap.append(b); });
+      renderPRs();
     }
 
     // ---- Navigation ----
@@ -604,6 +1937,9 @@
       });
     });
 
+    // Weekly metrics save button
+    document.getElementById('saveWeeklyMetrics').addEventListener('click', saveWeeklyMetrics);
+
     // Weekday picker
     document.querySelectorAll('.chip').forEach(chip=>{
       chip.addEventListener('click', ()=>{
@@ -617,10 +1953,109 @@
       if(chip){ chip.setAttribute('aria-pressed','true'); chip.classList.add('today-chip'); }
     }
 
-    function renderAll(){ renderHeader(); renderTimeline(); renderWater(); updateProgress(); }
+    function renderAll(){ 
+      renderHeader(); 
+      renderTimeline(); 
+      renderWater(); 
+      updateProteinRing();
+      renderTodayExercises();
+      renderSmartSuggestions();
+      updateShareCard();
+      updateProgress(); 
+    }
+
+    // ---- Enhanced UI Interactions ----
+    function addSuccessAnimation(element) {
+      element.classList.add('success-feedback');
+      setTimeout(() => element.classList.remove('success-feedback'), 400);
+    }
+
+    // Override existing functions with enhanced animations
+    const originalAddQuickProtein = addQuickProtein;
+    function addQuickProtein(amount) {
+      originalAddQuickProtein(amount);
+      const ring = document.querySelector('.protein-ring-center');
+      addSuccessAnimation(ring);
+    }
+
+    const originalAddQuickWater = addQuickWater;
+    function addQuickWater(glasses) {
+      originalAddQuickWater(glasses);
+      const progressBar = document.querySelector('.progress-fill');
+      addSuccessAnimation(progressBar);
+    }
+
+    // Header scroll effect
+    let lastScrollY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const header = document.querySelector('.app-header');
+      if (window.scrollY > 20) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+      lastScrollY = window.scrollY;
+    });
+
+    // Initialize Google Fit state
+    function initGoogleFit() {
+      const s = loadState();
+      if (s.googleFitConnected) {
+        googleFitConnected = true;
+        updateGoogleFitUI();
+        updateStepData();
+      }
+    }
+
+    // Save Google Fit state
+    function saveGoogleFitState() {
+      const s = loadState();
+      s.googleFitConnected = googleFitConnected;
+      saveState(s);
+    }
+
+    // ---- Dialog Event Listeners ----
+    document.getElementById('timeEditDialog').addEventListener('close', (e) => {
+      if (e.target.returnValue === 'default') {
+        saveTimeEdit();
+      }
+    });
+
+    document.getElementById('exerciseDialog').addEventListener('close', (e) => {
+      if (e.target.returnValue === 'default') {
+        saveNewExercise();
+      }
+    });
+
+    document.getElementById('quickExerciseDialog').addEventListener('close', (e) => {
+      if (e.target.returnValue === 'default') {
+        saveQuickExercise();
+      }
+    });
+
+    // Initialize protein goal input
+    function initProteinGoal() {
+      const s = loadState();
+      document.getElementById('proteinGoalInput').placeholder = s.proteinGoal || 120;
+    }
 
     // Init
-    initDefaults(); setPickerToToday(); renderAll(); renderWeek(); renderProgress();
+    initDefaults(); 
+    setPickerToToday(); 
+    initProteinGoal();
+    initGoogleFit();
+    renderAll(); 
+    renderWeek(); 
+    renderProgress();
+    
+    // Add CSS animations for slide effects
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInFromRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes slideOutToRight { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+    `;
+    document.head.appendChild(style);
+    
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
   </script>
 </body>
