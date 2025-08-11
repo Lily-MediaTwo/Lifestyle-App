@@ -387,32 +387,6 @@
     .today-exercise-item{display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:color-mix(in oklab, var(--accent) 8%, transparent); border-radius:6px; font-size:0.9rem}
     .quick-add-container{display:flex; gap:6px; margin-top:8px}
     
-    /* Workout Suggestions */
-    .workout-suggestions{display:grid; gap:8px}
-    .suggestion-item{
-      display:flex; align-items:center; gap:8px; padding:8px; 
-      background:color-mix(in oklab, var(--accent) 5%, transparent); 
-      border-radius:8px; border-left:3px solid var(--accent);
-      transition: all 0.2s ease;
-    }
-    .suggestion-item:hover {
-      background:color-mix(in oklab, var(--accent) 10%, transparent);
-      transform: translateX(4px);
-    }
-    .suggestion-icon{font-size:1.2rem}
-    .suggestion-text{flex:1; font-size:0.9rem}
-    .suggestion-action{font-size:0.8rem; color:var(--accent); font-weight:600}
-    
-    /* Google Fit Integration */
-    .sync-status-connected{color:var(--success); font-weight:600}
-    .sync-status-error{color:var(--warning); font-weight:600}
-    
-    /* Progress Sharing */
-    .share-preview{
-      margin:8px 0; padding:12px; background:var(--gradient-glass); 
-      border-radius:8px; border:1px solid color-mix(in oklab, var(--accent) 20%, transparent);
-    }
-    
     /* Achievement Badges */
     .achievement-badge{
       display:inline-flex; align-items:center; gap:4px;
@@ -531,48 +505,12 @@
       </div>
     </section>
 
-    <!-- Smart Workout Suggestions -->
-    <section class="card" style="margin:18px 4px">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
-        <h3 style="margin:0; color:var(--accent)">💡 Smart Suggestions</h3>
-      </div>
-      <div id="workoutSuggestions" class="workout-suggestions"></div>
-    </section>
-
     <section class="card" style="margin:18px 4px">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
         <h3 style="margin:0">Quick Exercise Log</h3>
         <button class="btn small" onclick="showQuickExerciseDialog()">+ Log Lift</button>
       </div>
       <div id="todayExercises" class="today-exercises"></div>
-    </section>
-
-    <!-- Google Fit Integration -->
-    <section class="card" style="margin:18px 4px">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <h3 style="margin:0">🔗 Google Fit Sync</h3>
-        <button id="connectGoogleFit" class="btn small">Connect</button>
-      </div>
-      <div id="googleFitStatus" class="muted" style="font-size:0.85rem">
-        Connect to sync your daily steps automatically
-      </div>
-      <div id="stepsSync" style="margin-top:8px; display:none">
-        <div class="today-exercise-item">
-          <span>Today's Steps</span>
-          <span id="syncedSteps" style="font-weight:700; color:var(--accent)">—</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Progress Sharing -->
-    <section class="card" style="margin:18px 4px">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <h3 style="margin:0">📊 Share Progress</h3>
-        <button id="generateProgressCard" class="btn small">Share</button>
-      </div>
-      <div class="muted" style="font-size:0.85rem">
-        Generate a beautiful progress card to share your achievements
-      </div>
     </section>
   </main>
 
@@ -830,7 +768,7 @@
 
   <!-- Quick Exercise Dialog -->
   <dialog id="quickExerciseDialog">
-    <form method="dialog">
+    <form method="dialog" onsubmit="saveQuickExercise(); return false;">
       <h3>Quick Exercise Log</h3>
       <div class="row" style="margin:8px 0">
         <label for="quickExerciseName">Exercise:</label>
@@ -842,7 +780,7 @@
       </div>
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
         <button type="button" class="btn" onclick="closeQuickExerciseDialog()">Cancel</button>
-        <button type="submit" class="btn primary">Log</button>
+        <button type="submit" class="btn primary">Log Exercise</button>
       </div>
     </form>
   </dialog>
@@ -1372,7 +1310,10 @@
       const exerciseName = document.getElementById('quickExerciseName').value.trim();
       const weight = parseFloat(document.getElementById('quickExerciseWeight').value);
       
-      if (!exerciseName || !weight) return;
+      if (!exerciseName || !weight || weight <= 0) {
+        alert('Please enter both exercise name and weight');
+        return;
+      }
       
       const s = loadState();
       const dk = todayKey();
@@ -1380,7 +1321,7 @@
       if (!s.logs[dk]) s.logs[dk] = {};
       if (!s.logs[dk].exercises) s.logs[dk].exercises = {};
       
-      const exerciseId = exerciseName.toLowerCase().replace(/\s+/g, '_');
+      const exerciseId = Date.now().toString(); // Use timestamp as unique ID
       s.logs[dk].exercises[exerciseId] = {
         name: exerciseName,
         maxWeight: weight
@@ -1388,8 +1329,9 @@
       
       // Update PR if this is a new record
       if (!s.prs) s.prs = {};
-      if (!s.prs[exerciseId] || weight > (s.prs[exerciseId].maxWeight || 0)) {
-        s.prs[exerciseId] = {
+      const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
+      if (!s.prs[exerciseKey] || weight > (s.prs[exerciseKey].maxWeight || 0)) {
+        s.prs[exerciseKey] = {
           name: exerciseName,
           maxWeight: weight,
           date: dk
@@ -1397,10 +1339,19 @@
       }
       
       saveState(s);
+      
+      // Success feedback and UI updates
+      triggerSuccessFeedback(`${exerciseName} logged: ${weight} lbs! 💪`);
       renderTodayExercises();
+      
+      // Clear form
       document.getElementById('quickExerciseName').value = '';
       document.getElementById('quickExerciseWeight').value = '';
+      
+      // Close dialog
       closeQuickExerciseDialog();
+      
+      console.log('Exercise saved:', { exerciseName, weight, exerciseId }); // Debug log
     }
 
     function renderTodayExercises() {
@@ -1826,7 +1777,6 @@
       renderWater(); 
       updateProteinRing();
       renderTodayExercises();
-      generateWorkoutSuggestions();
       updateProgress(); 
     }
 
@@ -1843,32 +1793,16 @@
       }
     });
 
-    document.getElementById('quickExerciseDialog').addEventListener('close', (e) => {
-      if (e.target.returnValue === 'default') {
-        saveQuickExercise();
-      }
-    });
+    // Note: quickExerciseDialog uses form onsubmit handler, no close event listener needed
 
-    // Initialize premium features
+    // Initialize premium visual features
     function initPremiumFeatures() {
-      // Google Fit integration
-      initGoogleFit();
-      
-      // Progress sharing
-      const shareBtn = document.getElementById('generateProgressCard');
-      if (shareBtn) {
-        shareBtn.addEventListener('click', generateProgressCard);
-      }
-      
       // Enhanced task completion feedback
       document.addEventListener('change', (e) => {
         if (e.target.type === 'checkbox' && e.target.closest('.task')) {
           if (e.target.checked) {
             triggerSuccessFeedback('Task completed! ✅');
             addSuccessAnimation(e.target.closest('.task'));
-            
-            // Refresh suggestions when tasks are completed
-            setTimeout(() => generateWorkoutSuggestions(), 500);
           }
         }
       });
@@ -1909,13 +1843,6 @@
     renderAll(); 
     renderWeek(); 
     renderProgress();
-    
-    // Refresh suggestions periodically
-    setInterval(() => {
-      if (document.getElementById('workoutSuggestions')) {
-        generateWorkoutSuggestions();
-      }
-    }, 300000); // Every 5 minutes
     
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
   </script>
