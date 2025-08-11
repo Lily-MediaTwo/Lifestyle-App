@@ -1,4 +1,4 @@
-// ---- Advanced Data Visualization ----
+    // ---- Advanced Data Visualization ----
     function setChartTimeframe(chartType, timeframe) {
       chartTimeframes[chartType] = timeframe;
       
@@ -880,6 +880,19 @@
     </div>
     <div class="form" aria-label="Daily measurements and habits">
       <div class="grid-2">
+        <div class="field"><label for="logWeight">Weight (lb)</label><input id="logWeight" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field"><label for="logWaist">Waist (in)</label><input id="logWaist" type="number" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="logHips">Hips (in)</label><input id="logHips" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field"><label for="logChest">Chest (in)</label><input id="logChest" type="number" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="logThigh">Thigh (in)</label><input id="logThigh" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field"><label for="logArm">Arm (in)</label><input id="logArm" type="number" step="0.1" inputmode="decimal"></div>
+      </div>
+    
+      <div class="grid-2">
         <div class="field"><label for="logDate">Date</label><input id="logDate" type="date"></div>
         <div class="field"><label for="logProtein">Protein (g)</label><input id="logProtein" type="number" step="1" inputmode="numeric"></div>
       </div>
@@ -999,7 +1012,7 @@
       </div>
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
         <button type="button" class="btn" onclick="closeTimeDialog()">Cancel</button>
-        <button type="submit" class="btn primary">Save</button>
+        <button type="submit" value="default" class="btn primary">Save</button>
       </div>
     </form>
   </dialog>
@@ -1014,7 +1027,7 @@
       </div>
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
         <button type="button" class="btn" onclick="closeExerciseDialog()">Cancel</button>
-        <button type="submit" class="btn primary">Add</button>
+        <button type="submit" value="default" class="btn primary">Add</button>
       </div>
     </form>
   </dialog>
@@ -1033,7 +1046,7 @@
       </div>
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
         <button type="button" class="btn" onclick="closeQuickExerciseDialog()">Cancel</button>
-        <button type="submit" class="btn primary">Log</button>
+        <button type="submit" value="default" class="btn primary">Log</button>
       </div>
     </form>
   </dialog>
@@ -2058,5 +2071,6 @@
     
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
   </script>
+<noscript><div style="padding:12px;color:#b91c1c">This app needs JavaScript enabled.</div></noscript>
 </body>
 </html>
