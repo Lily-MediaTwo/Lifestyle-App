@@ -432,13 +432,28 @@
     .today-exercise-item{display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:color-mix(in oklab, var(--accent) 8%, transparent); border-radius:6px; font-size:0.9rem}
     .quick-add-container{display:flex; gap:6px; margin-top:8px}
     
-    /* Structured Workout */
+    /* Enhanced Workout Styles */
     .structured-workout{display:grid; gap:10px; margin-top:8px}
     .workout-row{
-      display:grid; grid-template-columns: 1fr 100px 60px; gap:8px; align-items:center;
+      display:grid; gap:8px; align-items:center;
       padding:10px; background:color-mix(in oklab, var(--accent) 5%, transparent); 
       border-radius:8px; transition: all 0.2s ease;
     }
+    
+    /* Different grid layouts for different workout types */
+    .workout-row.strength {
+      grid-template-columns: 1fr 80px 60px; /* Exercise, Weight, Save indicator */
+    }
+    .workout-row.hiit, .workout-row.cardio {
+      grid-template-columns: 1fr 100px 60px; /* Exercise, Time (mm:ss), Save indicator */
+    }
+    .workout-row.core {
+      grid-template-columns: 1fr 80px 60px; /* Exercise, Reps, Save indicator */
+    }
+    .workout-row.recovery, .workout-row.rest {
+      grid-template-columns: 1fr 80px; /* Exercise, Checkbox */
+    }
+    
     .workout-row:hover {
       background:color-mix(in oklab, var(--accent) 8%, transparent);
     }
@@ -455,12 +470,12 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent);
     }
-    .weight-input{
+    .metric-input{
       padding:6px 8px; border:1px solid color-mix(in oklab, black 10%, transparent); 
       border-radius:6px; background:var(--white); text-align:center; 
       font-size:0.9rem; transition: all 0.2s ease; width: 100%;
     }
-    .weight-input:focus {
+    .metric-input:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent);
     }
@@ -479,7 +494,7 @@
     
     /* Dark mode fixes for selects and inputs */
     @media (prefers-color-scheme: dark) {
-      .exercise-select, .weight-input {
+      .exercise-select, .metric-input {
         background: var(--bg) !important;
         color: var(--ink) !important;
         border-color: var(--muted) !important;
@@ -530,6 +545,26 @@
     .pr-lift{font-size:0.8rem; color:var(--muted); margin-bottom:4px}
     .pr-value{font-size:1.2rem; font-weight:800; color:var(--accent)}
     .pr-date{font-size:0.7rem; color:var(--muted); margin-top:4px}
+    
+    /* Day Change Detection Indicator */
+    .day-change-indicator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--gradient-primary);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      z-index: 1000;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .day-change-indicator.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -670,6 +705,7 @@
       
       <h3>💪 Strength Days (Mon/Wed/Fri):</h3>
       <ul>
+        <li><strong>Metric:</strong> Weight in pounds</li>
         <li>3 sets × 8-12 reps</li>
         <li>60-90 seconds rest between sets</li>
         <li>2-3 minutes rest between exercises</li>
@@ -678,14 +714,24 @@
 
       <h3>⚡ HIIT Days (Tue/Thu):</h3>
       <ul>
+        <li><strong>Metric:</strong> Time duration (minutes)</li>
         <li>Work intervals: 15-30 seconds all-out</li>
         <li>Rest intervals: 30-60 seconds active recovery</li>
         <li>Total time: 15-20 minutes</li>
         <li>Focus: Maximum effort during work periods</li>
       </ul>
 
+      <h3>💯 Core Exercises:</h3>
+      <ul>
+        <li><strong>Metric:</strong> Total reps completed</li>
+        <li>Focus on form over speed</li>
+        <li>Control the movement</li>
+        <li>Progressive rep increases</li>
+      </ul>
+
       <h3>🚶 Recovery Days (Sat/Sun):</h3>
       <ul>
+        <li><strong>Metric:</strong> Simple completion checkmark</li>
         <li>Low intensity, 20-30 minutes</li>
         <li>Focus: Movement and mobility</li>
         <li>Listen to your body</li>
@@ -906,56 +952,62 @@
     </form>
   </dialog>
 
+  <!-- Day Change Indicator -->
+  <div id="dayChangeIndicator" class="day-change-indicator">
+    <h3 style="margin: 0 0 8px;">🌅 New Day!</h3>
+    <p style="margin: 0;">Your progress has been reset for today.<br>Let's make it a great day!</p>
+  </div>
+
   <script>
-    // Define exercise data first, before any functions
+    // Define exercise data with workout types
     const WORKOUT_EXERCISES = {
       0: [ // Sunday - Rest
-        { category: "Light Movement", options: ["Gentle Walk", "Stretching", "Tai Chi", "Restorative Yoga"] },
-        { category: "Recovery", options: ["Meditation", "Breathing Work", "Self-Massage", "Sauna/Bath"] },
-        { category: "Leisure", options: ["Reading", "Hobbies", "Social Time", "Nature Walk"] }
+        { category: "Light Movement", options: ["Gentle Walk", "Stretching", "Tai Chi", "Restorative Yoga"], type: "rest" },
+        { category: "Recovery", options: ["Meditation", "Breathing Work", "Self-Massage", "Sauna/Bath"], type: "rest" },
+        { category: "Leisure", options: ["Reading", "Hobbies", "Social Time", "Nature Walk"], type: "rest" }
       ],
       1: [ // Monday - Full Body Strength
-        { category: "Primary Squat", options: ["Back Squat", "Front Squat", "Goblet Squat", "Bulgarian Split Squat"] },
-        { category: "Primary Push", options: ["Bench Press", "Dumbbell Press", "Incline Press", "Push-ups"] },
-        { category: "Primary Pull", options: ["Bent-Over Row", "T-Bar Row", "One-Arm DB Row", "Cable Row"] },
-        { category: "Hip Hinge", options: ["Romanian Deadlift", "Hip Thrusts", "Kettlebell Swings", "Good Mornings"] },
-        { category: "Overhead", options: ["Overhead Press", "Arnold Press", "Pike Push-ups", "Landmine Press"] },
-        { category: "Core", options: ["Plank Hold", "Dead Bug", "Pallof Press", "Bird Dog"] }
+        { category: "Primary Squat", options: ["Back Squat", "Front Squat", "Goblet Squat", "Bulgarian Split Squat"], type: "strength" },
+        { category: "Primary Push", options: ["Bench Press", "Dumbbell Press", "Incline Press", "Push-ups"], type: "strength" },
+        { category: "Primary Pull", options: ["Bent-Over Row", "T-Bar Row", "One-Arm DB Row", "Cable Row"], type: "strength" },
+        { category: "Hip Hinge", options: ["Romanian Deadlift", "Hip Thrusts", "Kettlebell Swings", "Good Mornings"], type: "strength" },
+        { category: "Overhead", options: ["Overhead Press", "Arnold Press", "Pike Push-ups", "Landmine Press"], type: "strength" },
+        { category: "Core", options: ["Plank Hold", "Dead Bug", "Pallof Press", "Bird Dog"], type: "core" }
       ],
       2: [ // Tuesday - HIIT + Core
-        { category: "HIIT Cardio", options: ["Sprint Intervals", "Battle Ropes", "Burpees", "High Knees"] },
-        { category: "Core Flexion", options: ["Hanging Knee Raises", "Leg Raises", "V-ups", "Bicycle Crunches"] },
-        { category: "Anti-Extension", options: ["Plank", "Dead Bug", "Ab Wheel", "Hollow Hold"] },
-        { category: "Core Rotation", options: ["Russian Twists", "Wood Chops", "Cable Twists", "Medicine Ball Slams"] },
-        { category: "Anti-Lateral", options: ["Side Plank", "Suitcase Carry", "Single-Arm Farmer's Walk", "Pallof Press"] }
+        { category: "HIIT Cardio", options: ["Sprint Intervals", "Battle Ropes", "Burpees", "High Knees"], type: "hiit" },
+        { category: "Core Flexion", options: ["Hanging Knee Raises", "Leg Raises", "V-ups", "Bicycle Crunches"], type: "core" },
+        { category: "Anti-Extension", options: ["Plank", "Dead Bug", "Ab Wheel", "Hollow Hold"], type: "core" },
+        { category: "Core Rotation", options: ["Russian Twists", "Wood Chops", "Cable Twists", "Medicine Ball Slams"], type: "core" },
+        { category: "Anti-Lateral", options: ["Side Plank", "Suitcase Carry", "Single-Arm Farmer's Walk", "Pallof Press"], type: "core" }
       ],
       3: [ // Wednesday - Upper Strength
-        { category: "Primary Pull", options: ["Pull-ups", "Lat Pulldown", "Cable Row", "Chest-Supported Row"] },
-        { category: "Primary Push", options: ["Incline Press", "Overhead Press", "Dips", "Close-Grip Bench"] },
-        { category: "Pull Isolation", options: ["Face Pulls", "Reverse Flyes", "Shrugs", "Cable Pull-aparts"] },
-        { category: "Push Isolation", options: ["Lateral Raises", "Tricep Extensions", "Chest Flyes", "Front Raises"] },
-        { category: "Arms", options: ["Bicep Curls", "Hammer Curls", "Tricep Dips", "Cable Curls"] },
-        { category: "Cardio", options: ["20min Rowing", "Bike", "Incline Walk", "Elliptical"] }
+        { category: "Primary Pull", options: ["Pull-ups", "Lat Pulldown", "Cable Row", "Chest-Supported Row"], type: "strength" },
+        { category: "Primary Push", options: ["Incline Press", "Overhead Press", "Dips", "Close-Grip Bench"], type: "strength" },
+        { category: "Pull Isolation", options: ["Face Pulls", "Reverse Flyes", "Shrugs", "Cable Pull-aparts"], type: "strength" },
+        { category: "Push Isolation", options: ["Lateral Raises", "Tricep Extensions", "Chest Flyes", "Front Raises"], type: "strength" },
+        { category: "Arms", options: ["Bicep Curls", "Hammer Curls", "Tricep Dips", "Cable Curls"], type: "strength" },
+        { category: "Cardio", options: ["20min Rowing", "Bike", "Incline Walk", "Elliptical"], type: "cardio" }
       ],
       4: [ // Thursday - HIIT
-        { category: "Power", options: ["Jump Squats", "Box Jumps", "Explosive Push-ups", "Burpee Broad Jumps"] },
-        { category: "Cardio", options: ["High Knees", "Jumping Jacks", "Sprint Intervals", "Mountain Climbers"] },
-        { category: "Strength", options: ["Thrusters", "Man Makers", "Turkish Get-ups", "Kettlebell Swings"] },
-        { category: "Finisher", options: ["Plank Jacks", "Bear Crawls", "Jump Rope", "Burpee Ladder"] }
+        { category: "Power", options: ["Jump Squats", "Box Jumps", "Explosive Push-ups", "Burpee Broad Jumps"], type: "hiit" },
+        { category: "Cardio", options: ["High Knees", "Jumping Jacks", "Sprint Intervals", "Mountain Climbers"], type: "hiit" },
+        { category: "Strength", options: ["Thrusters", "Man Makers", "Turkish Get-ups", "Kettlebell Swings"], type: "hiit" },
+        { category: "Finisher", options: ["Plank Jacks", "Bear Crawls", "Jump Rope", "Burpee Ladder"], type: "hiit" }
       ],
       5: [ // Friday - Lower Strength
-        { category: "Hip Hinge", options: ["Deadlift", "Romanian Deadlift", "Trap Bar Deadlift", "Sumo Deadlift"] },
-        { category: "Squat", options: ["Back Squat", "Front Squat", "Hack Squat", "Leg Press"] },
-        { category: "Unilateral", options: ["Walking Lunges", "Bulgarian Split Squats", "Single-Leg RDL", "Step-ups"] },
-        { category: "Glutes", options: ["Hip Thrusts", "Glute Bridges", "Clamshells", "Cable Kickbacks"] },
-        { category: "Calves", options: ["Standing Calf Raises", "Seated Calf Raises", "Calf Press", "Jump Rope"] },
-        { category: "Cardio", options: ["20-30min Stair Climber", "Bike", "Incline Walk", "Rowing"] }
+        { category: "Hip Hinge", options: ["Deadlift", "Romanian Deadlift", "Trap Bar Deadlift", "Sumo Deadlift"], type: "strength" },
+        { category: "Squat", options: ["Back Squat", "Front Squat", "Hack Squat", "Leg Press"], type: "strength" },
+        { category: "Unilateral", options: ["Walking Lunges", "Bulgarian Split Squats", "Single-Leg RDL", "Step-ups"], type: "strength" },
+        { category: "Glutes", options: ["Hip Thrusts", "Glute Bridges", "Clamshells", "Cable Kickbacks"], type: "strength" },
+        { category: "Calves", options: ["Standing Calf Raises", "Seated Calf Raises", "Calf Press", "Jump Rope"], type: "strength" },
+        { category: "Cardio", options: ["20-30min Stair Climber", "Bike", "Incline Walk", "Rowing"], type: "cardio" }
       ],
       6: [ // Saturday - Active Recovery
-        { category: "Light Cardio", options: ["20-30min Walk", "Easy Bike", "Swimming", "Yoga Flow"] },
-        { category: "Mobility", options: ["Stretching Session", "Foam Rolling", "Yoga", "Pilates"] },
-        { category: "Stability", options: ["Balance Work", "Light Core", "Breathing Exercises", "Meditation"] },
-        { category: "Optional", options: ["Recreational Activity", "Light Sports", "Dancing", "Hiking"] }
+        { category: "Light Cardio", options: ["20-30min Walk", "Easy Bike", "Swimming", "Yoga Flow"], type: "recovery" },
+        { category: "Mobility", options: ["Stretching Session", "Foam Rolling", "Yoga", "Pilates"], type: "recovery" },
+        { category: "Stability", options: ["Balance Work", "Light Core", "Breathing Exercises", "Meditation"], type: "recovery" },
+        { category: "Optional", options: ["Recreational Activity", "Light Sports", "Dancing", "Hiking"], type: "recovery" }
       ]
     };
 
@@ -1038,10 +1090,27 @@
     const DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     let currentEditingTime = null;
     let currentEditingExerciseId = null;
+    let lastTrackedDate = null; // Track date changes
 
     // ---- State helpers ----
-    function loadState(){ try{return JSON.parse(localStorage.getItem("mfl_state_v23b")||"{}")}catch(e){return {}}}
-    function saveState(s){ localStorage.setItem("mfl_state_v23b", JSON.stringify(s)) }
+    function loadState(){ 
+      try{
+        const state = JSON.parse(localStorage.getItem("mfl_state_v24")||"{}");
+        // Migrate from old version if needed
+        if (localStorage.getItem("mfl_state_v23b") && !localStorage.getItem("mfl_state_v24")) {
+          try {
+            const oldState = JSON.parse(localStorage.getItem("mfl_state_v23b"));
+            localStorage.setItem("mfl_state_v24", JSON.stringify(oldState));
+            console.log("Migrated from v23b to v24");
+            return oldState;
+          } catch(e) {
+            console.log("Migration failed, starting fresh");
+          }
+        }
+        return state;
+      }catch(e){return {}}
+    }
+    function saveState(s){ localStorage.setItem("mfl_state_v24", JSON.stringify(s)) }
     function todayKey(){ return new Date().toISOString().slice(0,10) }
     function getDow(){ return Number(document.querySelector('.chip[aria-pressed="true"]')?.dataset.day ?? new Date().getDay()) }
     
@@ -1050,6 +1119,35 @@
       const [h,m]=hm.split(':').map(Number); 
       const d=new Date(); d.setHours(h); d.setMinutes(m); 
       return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) 
+    }
+
+    // ---- Day Change Detection ----
+    function checkForDayChange() {
+      const currentDate = todayKey();
+      
+      if (lastTrackedDate && lastTrackedDate !== currentDate) {
+        console.log('Day change detected:', lastTrackedDate, '->', currentDate);
+        showDayChangeNotification();
+        
+        // Reset daily completion tracking
+        const s = loadState();
+        s._markedToday = false;
+        saveState(s);
+        
+        // Update all UI elements
+        renderAll();
+      }
+      
+      lastTrackedDate = currentDate;
+    }
+
+    function showDayChangeNotification() {
+      const indicator = document.getElementById('dayChangeIndicator');
+      indicator.classList.add('show');
+      
+      setTimeout(() => {
+        indicator.classList.remove('show');
+      }, 3000);
     }
 
     function initDefaults(){
@@ -1066,14 +1164,18 @@
       if(!s.prs) s.prs={};
       if(!s.exercises) s.exercises={};
       if(!s.customTimes) s.customTimes={};
+      if(!s.workouts) s.workouts={}; // For storing workout data by date
       saveState(s);
+      
+      // Initialize day change tracking
+      lastTrackedDate = todayKey();
     }
 
     // ---- Protein Ring Functions ----
     function updateProteinRing() {
       const s = loadState();
-      const dk = todayKey();
-      const current = s.logs[dk]?.protein || 0;
+      const dk = todayKey(); // Always use current day
+      const current = s.logs[dk]?.protein || 0; // Default to 0 for new day
       const goal = s.proteinGoal || 120;
       const percentage = Math.min((current / goal) * 100, 100);
       
@@ -1094,7 +1196,60 @@
         saveState(s);
         updateProteinRing();
         document.getElementById('proteinGoalInput').value = '';
+        triggerSuccessFeedback(`Protein goal set to ${goal}g! 🎯`);
       }
+    }
+
+    function addQuickProtein(amount) {
+      const s = loadState();
+      const dk = todayKey(); // Always use current day
+      if (!s.logs[dk]) s.logs[dk] = {};
+      const current = s.logs[dk].protein || 0; // Default to 0 for new day
+      s.logs[dk].protein = current + amount;
+      saveState(s);
+      updateProteinRing();
+      
+      // Update log input if on log page
+      const proteinInput = document.getElementById('logProtein');
+      if (proteinInput && proteinInput.closest('.view').classList.contains('active')) {
+        proteinInput.value = s.logs[dk].protein;
+      }
+    }
+
+    // ---- Water Functions ----
+    function addQuickWater(glasses) {
+      const s = loadState();
+      const dk = todayKey(); // Always use current day
+      const current = s.water[dk] || 0; // Default to 0 for new day
+      const newAmount = Math.max(0, Math.min(current + glasses, s.waterGoal));
+      s.water[dk] = newAmount;
+      saveState(s);
+      renderWater();
+      updateProgress();
+    }
+
+    function renderWater(){
+      const s=loadState(); 
+      const dk=todayKey(); // Always use current day
+      const cur=s.water[dk]||0; // Default to 0 for new day
+      document.getElementById('waterCurrent').textContent=cur;
+      
+      const wrap=document.getElementById('waterDrops'); wrap.innerHTML='';
+      for(let i=0;i<s.waterGoal;i++){ 
+        const b=document.createElement('button'); 
+        b.type='button'; 
+        b.className='drop'+(i<cur?' filled':''); 
+        b.addEventListener('click',()=>{ 
+          const st=loadState(); 
+          const c=st.water[dk]||0; 
+          st.water[dk]=(i<c)?i:i+1; 
+          saveState(st); 
+          renderWater(); 
+          updateProgress(); 
+        }); 
+        wrap.append(b); 
+      }
+      document.getElementById('waterProgress').style.width = ((cur/s.waterGoal)*100).toFixed(0)+'%';
     }
 
     // ---- Time Editing Functions ----
@@ -1125,287 +1280,6 @@
       closeTimeDialog();
     }
 
-    // ---- Smart Workout Suggestions ----
-    function generateWorkoutSuggestions() {
-      const dow = getDow();
-      const s = loadState();
-      const dk = todayKey();
-      const checks = s.checks[dk] || {};
-      const plan = WEEKLY_SCHEDULE[dow];
-      const container = document.getElementById('workoutSuggestions');
-      
-      if (!container) return;
-      
-      container.innerHTML = '';
-      
-      const suggestions = [];
-      
-      // Check completion status
-      const completedTasks = Object.values(checks).filter(Boolean).length;
-      const totalTasks = plan.schedule.length;
-      const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
-      
-      // Time-based suggestions
-      const currentHour = new Date().getHours();
-      
-      if (completionRate < 0.3 && currentHour < 10) {
-        suggestions.push({
-          icon: '⏰',
-          text: 'Start your day strong! Begin with hydration and your morning routine.',
-          action: 'Get started',
-          type: 'motivation'
-        });
-      }
-      
-      if (plan.workoutType === 'strength' && !checks[`${dow}-workout`]) {
-        suggestions.push({
-          icon: '🏋️',
-          text: `Perfect time for ${plan.type}. Focus on compound movements today.`,
-          action: 'View workout',
-          type: 'workout'
-        });
-      }
-      
-      if (plan.workoutType === 'hiit' && currentHour >= 6 && currentHour <= 10) {
-        suggestions.push({
-          icon: '⚡',
-          text: 'HIIT workouts are most effective in the morning. High energy awaits!',
-          action: 'Start HIIT',
-          type: 'workout'
-        });
-      }
-      
-      // Nutrition suggestions
-      const proteinToday = s.logs[dk]?.protein || 0;
-      const proteinGoal = s.proteinGoal || 120;
-      
-      if (proteinToday < proteinGoal * 0.5 && currentHour >= 12) {
-        suggestions.push({
-          icon: '🥩',
-          text: `You're at ${proteinToday}g protein. Consider a protein-rich meal!`,
-          action: '+30g protein',
-          type: 'nutrition'
-        });
-      }
-      
-      // Hydration suggestions
-      const waterToday = s.water[dk] || 0;
-      const waterGoal = s.waterGoal || 8;
-      
-      if (waterToday < waterGoal * 0.6 && currentHour >= 14) {
-        suggestions.push({
-          icon: '💧',
-          text: 'Hydration check! You might need more water to hit your goal.',
-          action: '+2 glasses',
-          type: 'hydration'
-        });
-      }
-      
-      // Recovery suggestions
-      if (plan.workoutType === 'recovery') {
-        suggestions.push({
-          icon: '🧘',
-          text: 'Recovery day! Focus on mobility, stretching, or a peaceful walk.',
-          action: 'Plan recovery',
-          type: 'recovery'
-        });
-      }
-      
-      // High completion rate encouragement
-      if (completionRate >= 0.8) {
-        suggestions.push({
-          icon: '🎉',
-          text: 'Amazing progress today! You\'re crushing your goals.',
-          action: 'Keep going!',
-          type: 'celebration'
-        });
-      }
-      
-      // Render suggestions
-      if (suggestions.length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center; padding:12px; font-size:0.9rem">You\'re doing great! Keep up the momentum.</div>';
-        return;
-      }
-      
-      suggestions.forEach(suggestion => {
-        const item = document.createElement('div');
-        item.className = 'suggestion-item';
-        item.innerHTML = `
-          <span class="suggestion-icon">${suggestion.icon}</span>
-          <span class="suggestion-text">${suggestion.text}</span>
-          <span class="suggestion-action">${suggestion.action}</span>
-        `;
-        
-        // Add click handlers for actionable suggestions
-        item.addEventListener('click', () => handleSuggestionClick(suggestion));
-        
-        container.appendChild(item);
-      });
-    }
-    
-    function handleSuggestionClick(suggestion) {
-      switch (suggestion.type) {
-        case 'nutrition':
-          addQuickProtein(30);
-          triggerSuccessFeedback('Protein added! 💪');
-          break;
-        case 'hydration':
-          addQuickWater(2);
-          triggerSuccessFeedback('Stay hydrated! 💧');
-          break;
-        case 'workout':
-          // Could open workout details or mark as completed
-          triggerSuccessFeedback('Let\'s get moving! 🏋️');
-          break;
-        default:
-          triggerSuccessFeedback('Great choice! ✨');
-      }
-      
-      // Refresh suggestions after action
-      setTimeout(() => generateWorkoutSuggestions(), 1000);
-    }
-    
-    // ---- Google Fit Integration ----
-    let googleFitConnected = false;
-    
-    function initGoogleFit() {
-      // Load Google Fit API
-      if (typeof gapi === 'undefined') {
-        // Simulate API loading for demo
-        console.log('Google Fit API would be loaded here');
-      }
-      
-      const connectBtn = document.getElementById('connectGoogleFit');
-      const statusDiv = document.getElementById('googleFitStatus');
-      const stepsDiv = document.getElementById('stepsSync');
-      
-      connectBtn.addEventListener('click', async () => {
-        try {
-          connectBtn.textContent = 'Connecting...';
-          connectBtn.disabled = true;
-          
-          // Simulate connection process
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // For demo purposes, simulate successful connection
-          googleFitConnected = true;
-          
-          connectBtn.textContent = 'Connected ✓';
-          connectBtn.classList.add('btn-success');
-          statusDiv.innerHTML = '<span class="sync-status-connected">✅ Connected! Steps will sync automatically</span>';
-          stepsDiv.style.display = 'block';
-          
-          // Simulate fetching steps data
-          const simulatedSteps = Math.floor(Math.random() * 5000) + 3000;
-          document.getElementById('syncedSteps').textContent = simulatedSteps.toLocaleString();
-          
-          // Update logs with synced steps
-          const s = loadState();
-          const dk = todayKey();
-          if (!s.logs[dk]) s.logs[dk] = {};
-          s.logs[dk].steps = simulatedSteps;
-          saveState(s);
-          
-          triggerSuccessFeedback('Google Fit connected! 🎉');
-          
-        } catch (error) {
-          connectBtn.textContent = 'Retry';
-          connectBtn.disabled = false;
-          statusDiv.innerHTML = '<span class="sync-status-error">❌ Connection failed. Please try again.</span>';
-          console.error('Google Fit connection error:', error);
-        }
-      });
-    }
-    
-    // ---- Progress Sharing ----
-    function generateProgressCard() {
-      const s = loadState();
-      const dk = todayKey();
-      
-      // Calculate stats for sharing
-      const streak = s.streak || 0;
-      const proteinToday = s.logs[dk]?.protein || 0;
-      const proteinGoal = s.proteinGoal || 120;
-      const waterToday = s.water[dk] || 0;
-      const waterGoal = s.waterGoal || 8;
-      
-      // Get weekly completion
-      const start = new Date(s.weekStart);
-      let completedDays = 0;
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        const dateKey = d.toISOString().slice(0, 10);
-        const checks = s.checks[dateKey] || {};
-        const total = Object.keys(checks).length || 1;
-        const done = Object.values(checks).filter(Boolean).length / total;
-        if (done >= 0.8) completedDays++;
-      }
-      
-      // Create shareable content
-      const shareText = `🔥 Fitness Update!\n\n💪 ${streak} day streak\n🥤 Protein: ${proteinToday}g/${proteinGoal}g\n💧 Water: ${waterToday}/${waterGoal} glasses\n📅 Week progress: ${completedDays}/7 days\n\n#FitnessJourney #HealthGoals #Consistency`;
-      
-      // Create a beautiful visual card (simplified version)
-      const cardHTML = `
-        <div class="share-preview" style="text-align: center;">
-          <h3 style="margin: 0 0 8px; color: var(--accent);">My Progress Today</h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 12px 0;">
-            <div><strong>${streak}</strong><br><span class="muted">Day Streak</span></div>
-            <div><strong>${Math.round((proteinToday/proteinGoal)*100)}%</strong><br><span class="muted">Protein Goal</span></div>
-            <div><strong>${waterToday}/${waterGoal}</strong><br><span class="muted">Water Glasses</span></div>
-            <div><strong>${completedDays}/7</strong><br><span class="muted">Week Days</span></div>
-          </div>
-          <div class="achievement-badge" style="margin-top: 8px;">
-            🏆 ${getMotivationalMessage(streak, completedDays)}
-          </div>
-        </div>
-      `;
-      
-      // Show sharing options
-      if (navigator.share) {
-        navigator.share({
-          title: 'My Fitness Progress',
-          text: shareText,
-        }).catch(console.error);
-      } else {
-        // Fallback: copy to clipboard
-        navigator.clipboard.writeText(shareText).then(() => {
-          triggerSuccessFeedback('Progress copied to clipboard! 📋');
-          
-          // Show preview
-          const preview = document.createElement('div');
-          preview.innerHTML = cardHTML;
-          preview.style.position = 'fixed';
-          preview.style.top = '50%';
-          preview.style.left = '50%';
-          preview.style.transform = 'translate(-50%, -50%)';
-          preview.style.background = 'var(--card)';
-          preview.style.border = '2px solid var(--accent)';
-          preview.style.borderRadius = '16px';
-          preview.style.padding = '20px';
-          preview.style.zIndex = '1000';
-          preview.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
-          
-          document.body.appendChild(preview);
-          
-          setTimeout(() => {
-            preview.remove();
-          }, 3000);
-        }).catch(() => {
-          alert('Share text:\n\n' + shareText);
-        });
-      }
-    }
-    
-    function getMotivationalMessage(streak, completedDays) {
-      if (streak >= 30) return 'Consistency Master';
-      if (streak >= 14) return 'Building Momentum';
-      if (streak >= 7) return 'One Week Strong';
-      if (completedDays >= 6) return 'Week Champion';
-      if (completedDays >= 4) return 'Making Progress';
-      return 'Getting Started';
-    }
-    
     // ---- Enhanced Feedback System ----
     function triggerSuccessFeedback(message) {
       // Visual feedback
@@ -1444,120 +1318,316 @@
         element.classList.remove('success-feedback');
       }, 300);
     }
-    function addQuickProtein(amount) {
+
+    // ---- Rendering Today ----
+    function renderHeader(){
+      const dow=getDow(); const meta=WEEKLY_SCHEDULE[dow];
+      document.getElementById('dayName').textContent=DAY_NAMES[dow];
+      document.getElementById('dayType').textContent = `${ICONS[meta.workoutType]} ${meta.type} • ${meta.dose ? 'Dose day' : 'No dose'}`;
+      const s=loadState(); document.getElementById('streakCount').textContent = s.streak||0;
+      const start=new Date(s.weekStart); const diffDays = Math.floor((Date.now()-start.getTime())/86400000);
+      const weekNum = Math.floor(diffDays/7)+1; document.getElementById('weekLabel').textContent = `Week ${Math.max(1, weekNum)}`;
+    }
+
+    function getTimeForItem(dow, itemKey, defaultTime) {
       const s = loadState();
-      const dk = todayKey();
-      if (!s.logs[dk]) s.logs[dk] = {};
-      const current = s.logs[dk].protein || 0;
-      s.logs[dk].protein = current + amount;
-      saveState(s);
-      updateProteinRing();
+      return s.customTimes?.[dow]?.[itemKey] || defaultTime;
+    }
+
+    function renderTimeline(){
+      const timeline=document.getElementById('timeline'); timeline.innerHTML='';
+      const s=loadState(); const dk=todayKey(); const checks=s.checks[dk]||{}; const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow].schedule;
       
-      // Update log input if on log page
-      const proteinInput = document.getElementById('logProtein');
-      if (proteinInput && proteinInput.closest('.view').classList.contains('active')) {
-        proteinInput.value = s.logs[dk].protein;
+      plan.forEach(item=>{
+        const li=document.createElement('li'); const div=document.createElement('div'); div.className='task';
+        const id=`${dow}-${item.key}`; const cb=document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked=!!checks[id];
+        cb.addEventListener('change',()=>{ const st=loadState(); st.checks[dk]=st.checks[dk]||{}; st.checks[dk][id]=cb.checked; saveState(st); updateProgress(); renderWeek(); });
+        
+        const currentTime = getTimeForItem(dow, item.key, item.time);
+        const lbl=document.createElement('label'); lbl.setAttribute('for', id);
+        lbl.innerHTML = `<div class="task-time" onclick="editTime(${dow}, '${item.key}', '${currentTime}')">${toHuman(currentTime)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>`;
+        div.append(cb,lbl); li.append(div); timeline.append(li);
+      });
+    }
+
+    function renderWeek(){
+      const s=loadState(); const weekOverview=document.getElementById('weekOverview'); weekOverview.innerHTML=''; const weekSchedule=document.getElementById('weekSchedule'); weekSchedule.innerHTML='';
+      const start=new Date(s.weekStart); let doneDays=0;
+      for(let i=0;i<7;i++){
+        const d=new Date(start); d.setDate(start.getDate()+i); const dateKey=d.toISOString().slice(0,10); const dow=d.getDay();
+        const plan=WEEKLY_SCHEDULE[dow]; const checks=s.checks[dateKey]||{}; const completed=Object.values(checks).filter(Boolean).length; const total=plan.schedule.length; const water=(s.water[dateKey]||0)/(s.waterGoal||8);
+        const pct = Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
+        const row=document.createElement('li'); row.className='card'; if(new Date().toDateString()===d.toDateString()){ row.classList.add('today-highlight'); }
+        row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><strong>${DAY_NAMES[dow]}</strong> • ${ICONS[plan.workoutType]} ${plan.type} • ${plan.dose?'Dose':'No dose'}</div><div style="min-width:46px;text-align:right"><strong>${Math.round(pct*100)}%</strong></div></div><div class="progress-bar"><div class="progress-fill" style="width:${(pct*100).toFixed(0)}%"></div></div>`;
+        weekOverview.append(row);
+        
+        const sched=document.createElement('div'); sched.className='card'; if(new Date().toDateString()===d.toDateString()){ sched.classList.add('today-highlight'); }
+        sched.innerHTML=`<h3 style="margin:0 0 6px">${DAY_NAMES[dow]} – ${plan.type}</h3>`;
+        plan.schedule.forEach(item=>{ const line=document.createElement('div'); line.className='muted'; line.style.margin='2px 0'; line.textContent = `${toHuman(getTimeForItem(dow, item.key, item.time))} • ${item.title}`; sched.append(line); });
+        weekSchedule.append(sched);
+        if(pct>=0.9) doneDays++;
       }
+      const pctWeek = Math.round((doneDays/7)*100); document.getElementById('weekCompleted').textContent=doneDays; document.getElementById('weekPercentage').textContent=pctWeek+'%';
     }
 
-    function addQuickWater(glasses) {
-      const s = loadState();
-      const dk = todayKey();
-      const current = s.water[dk] || 0;
-      const newAmount = Math.max(0, Math.min(current + glasses, s.waterGoal));
-      s.water[dk] = newAmount;
-      saveState(s);
-      renderWater();
-      updateProgress();
+    function updateProgress(){
+      const s=loadState(); const dk=todayKey(); const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow];
+      const checks=s.checks[dk]||{}; const completed=Object.values(checks).filter(Boolean).length; const total=plan.schedule.length; const water=(s.water[dk]||0)/(s.waterGoal||8);
+      const pct=Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
+      if(pct>=0.9 && !s._markedToday){ s._markedToday=true; s.streak=(s.streak||0)+1; saveState(s); document.getElementById('streakCount').textContent=s.streak; }
     }
 
-    function showQuickExerciseDialog() {
-      document.getElementById('quickExerciseDialog').showModal();
-    }
-
-    function closeQuickExerciseDialog() {
-      document.getElementById('quickExerciseDialog').close();
-    }
-
-    function saveQuickExercise() {
-      const exerciseName = document.getElementById('quickExerciseName').value.trim();
-      const weight = parseFloat(document.getElementById('quickExerciseWeight').value);
-      
-      if (!exerciseName || !weight || weight <= 0) {
-        alert('Please enter both exercise name and weight');
-        return;
-      }
-      
-      const s = loadState();
-      const dk = todayKey();
-      
-      if (!s.logs[dk]) s.logs[dk] = {};
-      if (!s.logs[dk].exercises) s.logs[dk].exercises = {};
-      
-      const exerciseId = Date.now().toString(); // Use timestamp as unique ID
-      s.logs[dk].exercises[exerciseId] = {
-        name: exerciseName,
-        maxWeight: weight
-      };
-      
-      // Update PR if this is a new record
-      if (!s.prs) s.prs = {};
-      const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
-      if (!s.prs[exerciseKey] || weight > (s.prs[exerciseKey].maxWeight || 0)) {
-        s.prs[exerciseKey] = {
-          name: exerciseName,
-          maxWeight: weight,
-          date: dk
-        };
-      }
-      
-      saveState(s);
-      
-      // Success feedback and UI updates
-      triggerSuccessFeedback(`${exerciseName} logged: ${weight} lbs! 💪`);
-      renderTodayExercises();
-      
-      // Clear form
-      document.getElementById('quickExerciseName').value = '';
-      document.getElementById('quickExerciseWeight').value = '';
-      
-      // Close dialog
-      closeQuickExerciseDialog();
-      
-      console.log('Exercise saved:', { exerciseName, weight, exerciseId }); // Debug log
-    }
-
-    function renderTodayExercises() {
-      const s = loadState();
-      const dk = todayKey();
-      const container = document.getElementById('todayExercises');
+    // ---- Enhanced Workout Section with Different Metrics ----
+    function renderWorkoutSection() {
+      const dow = getDow();
+      const container = document.getElementById('workoutSection');
+      const workoutTypeSpan = document.getElementById('workoutType');
       
       if (!container) return;
       
       container.innerHTML = '';
+      const exercises = WORKOUT_EXERCISES[dow] || [];
+      const schedule = WEEKLY_SCHEDULE[dow];
       
-      const todayExercises = s.logs[dk]?.exercises || {};
+      // Update workout type indicator
+      if (workoutTypeSpan) {
+        workoutTypeSpan.textContent = schedule.type;
+      }
       
-      if (Object.keys(todayExercises).length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center; padding:12px; font-size:0.9rem">No exercises logged today</div>';
+      if (exercises.length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center; padding:20px;">No workout for this day</div>';
         return;
       }
       
-      Object.entries(todayExercises).forEach(([id, exercise]) => {
-        const isPR = s.prs[id] && s.prs[id].maxWeight === exercise.maxWeight && s.prs[id].date === dk;
+      // Load existing workout data
+      const s = loadState();
+      const dk = todayKey();
+      if (!s.workouts) s.workouts = {};
+      const workoutData = s.workouts[dk] || {};
+      
+      exercises.forEach((exercise, index) => {
+        const row = document.createElement('div');
+        row.className = `workout-row ${exercise.type}`;
+        row.id = `workout-row-${index}`;
         
-        const item = document.createElement('div');
-        item.className = 'today-exercise-item';
-        item.innerHTML = `
-          <span>${exercise.name}</span>
-          <span style="display:flex; align-items:center; gap:6px">
-            <strong>${exercise.maxWeight} lbs</strong>
-            ${isPR ? '<span class="pr-badge">PR!</span>' : ''}
-          </span>
+        const currentExercise = workoutData[`ex_${index}`] || '';
+        const currentValue = workoutData[`val_${index}`] || '';
+        
+        // Mark as completed if both exercise and value are filled
+        if (currentExercise && currentValue) {
+          row.classList.add('completed');
+        }
+        
+        // Create dropdown options
+        const optionsHTML = exercise.options.map(option => 
+          `<option value="${option}" ${option === currentExercise ? 'selected' : ''}>${option}</option>`
+        ).join('');
+        
+        // Different input types based on exercise type
+        let inputHTML = '';
+        let unit = '';
+        
+        switch (exercise.type) {
+          case 'strength':
+            inputHTML = `<input type="number" class="metric-input" id="metric-${index}" placeholder="lbs" step="0.5" min="0" value="${currentValue}" />`;
+            unit = 'lbs';
+            break;
+          case 'hiit':
+          case 'cardio':
+            inputHTML = `<input type="number" class="metric-input" id="metric-${index}" placeholder="min" step="0.5" min="0" value="${currentValue}" />`;
+            unit = 'min';
+            break;
+          case 'core':
+            inputHTML = `<input type="number" class="metric-input" id="metric-${index}" placeholder="reps" step="1" min="0" value="${currentValue}" />`;
+            unit = 'reps';
+            break;
+          case 'recovery':
+          case 'rest':
+            inputHTML = `<input type="checkbox" id="metric-${index}" ${currentValue === 'true' ? 'checked' : ''} style="width:20px; height:20px;" />`;
+            unit = '';
+            break;
+        }
+        
+        row.innerHTML = `
+          <select class="exercise-select" id="exercise-${index}">
+            <option value="">${exercise.category}</option>
+            ${optionsHTML}
+          </select>
+          ${inputHTML}
+          ${exercise.type !== 'recovery' && exercise.type !== 'rest' ? `
+          <div class="save-indicator" id="save-${index}">
+            <span id="save-text-${index}">Saved ✓</span>
+            <span id="pr-badge-${index}"></span>
+          </div>
+          ` : ''}
         `;
-        container.appendChild(item);
+        
+        container.appendChild(row);
+        
+        // Add event listeners
+        const exerciseSelect = document.getElementById(`exercise-${index}`);
+        const metricInput = document.getElementById(`metric-${index}`);
+        
+        if (exerciseSelect && metricInput) {
+          exerciseSelect.addEventListener('change', () => saveWorkoutData(index, exercise.type));
+          
+          if (exercise.type === 'recovery' || exercise.type === 'rest') {
+            metricInput.addEventListener('change', () => saveWorkoutData(index, exercise.type));
+          } else {
+            metricInput.addEventListener('input', () => saveWorkoutData(index, exercise.type));
+          }
+        }
       });
     }
+
+    function saveWorkoutData(index, exerciseType) {
+      const exerciseSelect = document.getElementById(`exercise-${index}`);
+      const metricInput = document.getElementById(`metric-${index}`);
+      const row = document.getElementById(`workout-row-${index}`);
+      
+      if (!exerciseSelect || !metricInput) return;
+      
+      const exercise = exerciseSelect.value;
+      let value;
+      
+      // Get value based on exercise type
+      if (exerciseType === 'recovery' || exerciseType === 'rest') {
+        value = metricInput.checked ? 'true' : 'false';
+      } else {
+        value = parseFloat(metricInput.value) || 0;
+      }
+      
+      const s = loadState();
+      const dk = todayKey();
+      
+      if (!s.workouts) s.workouts = {};
+      if (!s.workouts[dk]) s.workouts[dk] = {};
+      
+      // Save data
+      s.workouts[dk][`ex_${index}`] = exercise;
+      s.workouts[dk][`val_${index}`] = value;
+      
+      // Check for PR only for strength exercises
+      if (exercise && value > 0 && exerciseType === 'strength') {
+        const exerciseKey = exercise.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        if (!s.prs) s.prs = {};
+        
+        let isPR = false;
+        if (!s.prs[exerciseKey] || value > (s.prs[exerciseKey].maxWeight || 0)) {
+          s.prs[exerciseKey] = {
+            name: exercise,
+            maxWeight: value,
+            date: dk
+          };
+          isPR = true;
+        }
+        
+        // Show PR feedback
+        if (isPR) {
+          const prBadge = document.getElementById(`pr-badge-${index}`);
+          if (prBadge) {
+            prBadge.innerHTML = '<span class="pr-indicator">PR!</span>';
+            setTimeout(() => {
+              prBadge.innerHTML = '';
+            }, 5000);
+          }
+          triggerSuccessFeedback(`New PR! ${exercise}: ${value} lbs 🏆`);
+        }
+      }
+      
+      // Update visual state
+      if (row) {
+        const isCompleted = exercise && ((exerciseType === 'recovery' || exerciseType === 'rest') ? value === 'true' : value > 0);
+        if (isCompleted) {
+          row.classList.add('completed');
+        } else {
+          row.classList.remove('completed');
+        }
+      }
+      
+      // Show saved indicator (not for recovery/rest)
+      if (exerciseType !== 'recovery' && exerciseType !== 'rest') {
+        const saveIndicator = document.getElementById(`save-${index}`);
+        if (saveIndicator && exercise && value > 0) {
+          saveIndicator.classList.add('show');
+          setTimeout(() => {
+            saveIndicator.classList.remove('show');
+          }, 2000);
+        }
+      }
+      
+      saveState(s);
+    }
+
+    // ---- Log tab ----
+    function pad(n){ return String(n).padStart(2,'0') }
+    function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` }
+
+    function loadLog(dateKey){
+      const s=loadState(); const L=s.logs[dateKey]||{};
+      const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value = (v ?? ''); };
+      set('logDate', dateKey);
+      set('logWeight', L.weight); set('logWaist', L.waist); set('logHips', L.hips); set('logChest', L.chest); set('logThigh', L.thigh); set('logArm', L.arm);
+      set('logProtein', L.protein); set('logSleep', L.sleep); set('logSteps', L.steps); set('logMood', L.mood);
+      
+      // Load exercises for this date
+      const exerciseLog = document.getElementById('exerciseLog');
+      exerciseLog.innerHTML = '';
+      if (L.exercises) {
+        Object.entries(L.exercises).forEach(([exerciseId, exercise]) => {
+          renderExerciseEntry(exerciseId, exercise.name, exercise.sets);
+        });
+      }
+      
+      updateProteinRing();
+    }
+
+    function saveLog(){
+      const dateKey=document.getElementById('logDate').value || todayISO();
+      const get=(id)=>{ const v=document.getElementById(id).value; return v===''?undefined:(isNaN(v)?v:parseFloat(v)); };
+      
+      const exercises = getExerciseData();
+      const prs = calculatePRs(exercises);
+      
+      const L={ weight:get('logWeight'), waist:get('logWaist'), hips:get('logHips'), chest:get('logChest'), thigh:get('logThigh'), arm:get('logArm'),
+                protein:get('logProtein'), sleep:get('logSleep'), steps:get('logSteps'), mood:get('logMood'), exercises: exercises };
+      
+      const s=loadState(); 
+      s.logs[dateKey]=Object.assign({}, s.logs[dateKey]||{}, L); 
+      
+      // Update PRs
+      if (!s.prs) s.prs = {};
+      Object.entries(prs).forEach(([key, pr]) => {
+        if (!s.prs[key] || pr.maxWeight > (s.prs[key].maxWeight || 0)) {
+          s.prs[key] = pr;
+        }
+      });
+      
+      saveState(s); 
+      updateProteinRing();
+      triggerSuccessFeedback('Log saved successfully! 📊'); 
+      renderProgress();
+    }
+
+    function initLog(){
+      const d=todayISO(); document.getElementById('logDate').value=d; loadLog(d);
+      document.getElementById('logDate').addEventListener('change', e=>loadLog(e.target.value));
+      document.getElementById('saveLogBtn').addEventListener('click', saveLog);
+      document.getElementById('addExerciseBtn').addEventListener('click', addExercise);
+      
+      document.getElementById('exportBtn').addEventListener('click', ()=>{
+        const data = loadState();
+        const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='morning-fat-loss-backup.json'; a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+      });
+      document.getElementById('importInput').addEventListener('change', (e)=>{
+        const file=e.target.files[0]; if(!file) return;
+        const reader=new FileReader(); reader.onload=()=>{ try{ localStorage.setItem('mfl_state_v24', reader.result); alert('Imported ✔'); renderAll(); renderWeek(); renderProgress(); }catch(err){ alert('Import failed'); } }; reader.readAsText(file);
+      });
+    }
+
+    // ---- Exercise Management Functions ----
     function addExercise() {
       document.getElementById('exerciseDialog').showModal();
     }
@@ -1599,47 +1669,8 @@
       // Update will be handled when saving
     }
 
-    function addSet(exerciseId, setData = null) {
-      const container = document.getElementById(`sets-${exerciseId}`);
-      const setIndex = container.children.length; // -1 for header, but +1 for new set = 0 net change
-      
-      const setRow = document.createElement('div');
-      setRow.className = 'set-row';
-      setRow.innerHTML = `
-        <div>${setIndex}</div>
-        <input type="number" class="set-input" placeholder="0" step="0.5" value="${setData?.weight || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'weight', this.value)">
-        <input type="number" class="set-input" placeholder="0" step="1" value="${setData?.reps || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'reps', this.value)">
-        <input type="number" class="set-input" placeholder="0" min="1" max="10" step="0.5" value="${setData?.rpe || ''}" onchange="updateSetData('${exerciseId}', ${setIndex - 1}, 'rpe', this.value)">
-        <button class="remove-set-btn" onclick="removeSet('${exerciseId}', ${setIndex - 1})">×</button>
-      `;
-      
-      container.appendChild(setRow);
-    }
-
-    function removeSet(exerciseId, setIndex) {
-      const container = document.getElementById(`sets-${exerciseId}`);
-      if (container.children.length > 2) { // Keep at least header + 1 set
-        container.children[setIndex + 1].remove(); // +1 to account for header
-        updateSetNumbers(exerciseId);
-      }
-    }
-
-    function updateSetNumbers(exerciseId) {
-      const container = document.getElementById(`sets-${exerciseId}`);
-      Array.from(container.children).forEach((row, index) => {
-        if (index > 0) { // Skip header
-          row.children[0].textContent = index;
-        }
-      });
-    }
-
     function removeExercise(exerciseId) {
       document.getElementById(`exercise-${exerciseId}`).remove();
-    }
-
-    function updateSetData(exerciseId, setIndex, field, value) {
-      // This could be used to auto-calculate PRs or save data in real-time
-      // For now, data will be saved when the save button is clicked
     }
 
     function getExerciseData() {
@@ -1710,139 +1741,6 @@
       renderProgress();
     }
 
-    // ---- Rendering Today ----
-    function renderHeader(){
-      const dow=getDow(); const meta=WEEKLY_SCHEDULE[dow];
-      document.getElementById('dayName').textContent=DAY_NAMES[dow];
-      document.getElementById('dayType').textContent = `${ICONS[meta.workoutType]} ${meta.type} • ${meta.dose ? 'Dose day' : 'No dose'}`;
-      const s=loadState(); document.getElementById('streakCount').textContent = s.streak||0;
-      const start=new Date(s.weekStart); const diffDays = Math.floor((Date.now()-start.getTime())/86400000);
-      const weekNum = Math.floor(diffDays/7)+1; document.getElementById('weekLabel').textContent = `Week ${Math.max(1, weekNum)}`;
-    }
-
-    function getTimeForItem(dow, itemKey, defaultTime) {
-      const s = loadState();
-      return s.customTimes?.[dow]?.[itemKey] || defaultTime;
-    }
-
-    function renderTimeline(){
-      const timeline=document.getElementById('timeline'); timeline.innerHTML='';
-      const s=loadState(); const dk=todayKey(); const checks=s.checks[dk]||{}; const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow].schedule;
-      
-      plan.forEach(item=>{
-        const li=document.createElement('li'); const div=document.createElement('div'); div.className='task';
-        const id=`${dow}-${item.key}`; const cb=document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked=!!checks[id];
-        cb.addEventListener('change',()=>{ const st=loadState(); st.checks[dk]=st.checks[dk]||{}; st.checks[dk][id]=cb.checked; saveState(st); updateProgress(); renderWeek(); });
-        
-        const currentTime = getTimeForItem(dow, item.key, item.time);
-        const lbl=document.createElement('label'); lbl.setAttribute('for', id);
-        lbl.innerHTML = `<div class="task-time" onclick="editTime(${dow}, '${item.key}', '${currentTime}')">${toHuman(currentTime)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>`;
-        div.append(cb,lbl); li.append(div); timeline.append(li);
-      });
-    }
-
-    function renderWater(){
-      const s=loadState(); const dk=todayKey(); const cur=s.water[dk]||0; document.getElementById('waterCurrent').textContent=cur;
-      const wrap=document.getElementById('waterDrops'); wrap.innerHTML='';
-      for(let i=0;i<s.waterGoal;i++){ const b=document.createElement('button'); b.type='button'; b.className='drop'+(i<cur?' filled':''); b.addEventListener('click',()=>{ const st=loadState(); const c=st.water[dk]||0; st.water[dk]=(i<c)?i:i+1; saveState(st); renderWater(); updateProgress(); }); wrap.append(b); }
-      document.getElementById('waterProgress').style.width = ((cur/s.waterGoal)*100).toFixed(0)+'%';
-    }
-
-    function renderWeek(){
-      const s=loadState(); const weekOverview=document.getElementById('weekOverview'); weekOverview.innerHTML=''; const weekSchedule=document.getElementById('weekSchedule'); weekSchedule.innerHTML='';
-      const start=new Date(s.weekStart); let doneDays=0;
-      for(let i=0;i<7;i++){
-        const d=new Date(start); d.setDate(start.getDate()+i); const dateKey=d.toISOString().slice(0,10); const dow=d.getDay();
-        const plan=WEEKLY_SCHEDULE[dow]; const checks=s.checks[dateKey]||{}; const completed=Object.values(checks).filter(Boolean).length; const total=plan.schedule.length; const water=(s.water[dateKey]||0)/(s.waterGoal||8);
-        const pct = Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
-        const row=document.createElement('li'); row.className='card'; if(new Date().toDateString()===d.toDateString()){ row.classList.add('today-highlight'); }
-        row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><strong>${DAY_NAMES[dow]}</strong> • ${ICONS[plan.workoutType]} ${plan.type} • ${plan.dose?'Dose':'No dose'}</div><div style="min-width:46px;text-align:right"><strong>${Math.round(pct*100)}%</strong></div></div><div class="progress-bar"><div class="progress-fill" style="width:${(pct*100).toFixed(0)}%"></div></div>`;
-        weekOverview.append(row);
-        
-        const sched=document.createElement('div'); sched.className='card'; if(new Date().toDateString()===d.toDateString()){ sched.classList.add('today-highlight'); }
-        sched.innerHTML=`<h3 style="margin:0 0 6px">${DAY_NAMES[dow]} – ${plan.type}</h3>`;
-        plan.schedule.forEach(item=>{ const line=document.createElement('div'); line.className='muted'; line.style.margin='2px 0'; line.textContent = `${toHuman(getTimeForItem(dow, item.key, item.time))} • ${item.title}`; sched.append(line); });
-        weekSchedule.append(sched);
-        if(pct>=0.9) doneDays++;
-      }
-      const pctWeek = Math.round((doneDays/7)*100); document.getElementById('weekCompleted').textContent=doneDays; document.getElementById('weekPercentage').textContent=pctWeek+'%';
-    }
-
-    function updateProgress(){
-      const s=loadState(); const dk=todayKey(); const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow];
-      const checks=s.checks[dk]||{}; const completed=Object.values(checks).filter(Boolean).length; const total=plan.schedule.length; const water=(s.water[dk]||0)/(s.waterGoal||8);
-      const pct=Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
-      if(pct>=0.9 && !s._markedToday){ s._markedToday=true; s.streak=(s.streak||0)+1; saveState(s); document.getElementById('streakCount').textContent=s.streak; }
-    }
-
-    // ---- Log tab ----
-    function pad(n){ return String(n).padStart(2,'0') }
-    function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` }
-
-    function loadLog(dateKey){
-      const s=loadState(); const L=s.logs[dateKey]||{};
-      const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value = (v ?? ''); };
-      set('logDate', dateKey);
-      set('logWeight', L.weight); set('logWaist', L.waist); set('logHips', L.hips); set('logChest', L.chest); set('logThigh', L.thigh); set('logArm', L.arm);
-      set('logProtein', L.protein); set('logSleep', L.sleep); set('logSteps', L.steps); set('logMood', L.mood);
-      
-      // Load exercises for this date
-      const exerciseLog = document.getElementById('exerciseLog');
-      exerciseLog.innerHTML = '';
-      if (L.exercises) {
-        Object.entries(L.exercises).forEach(([exerciseId, exercise]) => {
-          renderExerciseEntry(exerciseId, exercise.name, exercise.sets);
-        });
-      }
-      
-      updateProteinRing();
-    }
-
-    function saveLog(){
-      const dateKey=document.getElementById('logDate').value || todayISO();
-      const get=(id)=>{ const v=document.getElementById(id).value; return v===''?undefined:(isNaN(v)?v:parseFloat(v)); };
-      
-      const exercises = getExerciseData();
-      const prs = calculatePRs(exercises);
-      
-      const L={ weight:get('logWeight'), waist:get('logWaist'), hips:get('logHips'), chest:get('logChest'), thigh:get('logThigh'), arm:get('logArm'),
-                protein:get('logProtein'), sleep:get('logSleep'), steps:get('logSteps'), mood:get('logMood'), exercises: exercises };
-      
-      const s=loadState(); 
-      s.logs[dateKey]=Object.assign({}, s.logs[dateKey]||{}, L); 
-      
-      // Update PRs
-      if (!s.prs) s.prs = {};
-      Object.entries(prs).forEach(([key, pr]) => {
-        if (!s.prs[key] || pr.maxWeight > (s.prs[key].maxWeight || 0)) {
-          s.prs[key] = pr;
-        }
-      });
-      
-      saveState(s); 
-      updateProteinRing();
-      triggerSuccessFeedback('Log saved successfully! 📊'); 
-      renderProgress();
-    }
-
-    function initLog(){
-      const d=todayISO(); document.getElementById('logDate').value=d; loadLog(d);
-      document.getElementById('logDate').addEventListener('change', e=>loadLog(e.target.value));
-      document.getElementById('saveLogBtn').addEventListener('click', saveLog);
-      document.getElementById('addExerciseBtn').addEventListener('click', addExercise);
-      
-      document.getElementById('exportBtn').addEventListener('click', ()=>{
-        const data = loadState();
-        const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='morning-fat-loss-backup.json'; a.click();
-        setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-      });
-      document.getElementById('importInput').addEventListener('change', (e)=>{
-        const file=e.target.files[0]; if(!file) return;
-        const reader=new FileReader(); reader.onload=()=>{ try{ localStorage.setItem('mfl_state_v23b', reader.result); alert('Imported ✔'); renderAll(); renderWeek(); renderProgress(); }catch(err){ alert('Import failed'); } }; reader.readAsText(file);
-      });
-    }
-
     // ---- Progress tab ----
     function drawLineChart(canvasId, points, color){
       const cv=document.getElementById(canvasId); if(!cv) return; const ctx=cv.getContext('2d'); const w=cv.width, h=cv.height;
@@ -1894,22 +1792,37 @@
       drawLineChart('chartWaist', waistPts, getComputedStyle(document.documentElement).getPropertyValue('--drop').trim());
       document.getElementById('waistChange').textContent = waistPts.length?`Δ ${calcChange(waistPts)} in`:'—';
 
+      // Enhanced weekly averages calculation
       const s=loadState(); const start=new Date(s.weekStart); const end=new Date(start); end.setDate(start.getDate()+7);
-      let workouts=0, protein=0, proteinDays=0, sleep=0, sleepDays=0, water=0, waterDays=0;
+      let workouts=0, proteinSum=0, proteinDays=0, sleepSum=0, sleepDays=0, waterSum=0, waterDays=0;
+      
       for(let i=0;i<7;i++){
         const d=new Date(start); d.setDate(start.getDate()+i); const dk=d.toISOString().slice(0,10);
         const checks=s.checks[dk]||{}; const total=(Object.keys(checks).length||1); const done=(Object.values(checks).filter(Boolean).length)/(total);
         if(done>=0.6) workouts++;
-        const L=s.logs[dk]; if(L){
-          if(L.protein){ protein+=Number(L.protein); proteinDays++; }
-          if(L.sleep){ sleep+=Number(L.sleep); sleepDays++; }
+        
+        // Protein averages from logs
+        const L=s.logs[dk]; 
+        if(L && L.protein != null){ 
+          proteinSum += Number(L.protein); 
+          proteinDays++; 
         }
-        if(s.water[dk]!=null){ water+=Number(s.water[dk]); waterDays++; }
+        if(L && L.sleep != null){ 
+          sleepSum += Number(L.sleep); 
+          sleepDays++; 
+        }
+        
+        // Water averages from daily tracking
+        if(s.water[dk] != null){ 
+          waterSum += Number(s.water[dk]); 
+          waterDays++; 
+        }
       }
+      
       document.getElementById('sumWorkouts').textContent = `${workouts}/7`;
-      document.getElementById('sumProtein').textContent = proteinDays? `${Math.round(protein/proteinDays)} g` : '—';
-      document.getElementById('sumSleep').textContent = sleepDays? (sleep/sleepDays).toFixed(1)+' h' : '—';
-      document.getElementById('sumWater').textContent = waterDays? (water/waterDays).toFixed(1)+' cups' : '—';
+      document.getElementById('sumProtein').textContent = proteinDays ? `${Math.round(proteinSum/proteinDays)} g` : '—';
+      document.getElementById('sumSleep').textContent = sleepDays ? (sleepSum/sleepDays).toFixed(1)+' h' : '—';
+      document.getElementById('sumWater').textContent = waterDays ? (waterSum/waterDays).toFixed(1)+' cups' : '—';
 
       renderPRs();
     }
@@ -1946,198 +1859,13 @@
     }
 
     function renderAll(){ 
+      checkForDayChange(); // Check for day changes first
       renderHeader(); 
       renderTimeline(); 
       renderWater(); 
       updateProteinRing();
       renderWorkoutSection();
       updateProgress(); 
-    }
-
-    // ---- Workout Section Rendering ----
-    function renderWorkoutSection() {
-      console.log('renderWorkoutSection called'); // Debug
-      
-      const dow = getDow();
-      const container = document.getElementById('workoutSection');
-      const workoutTypeSpan = document.getElementById('workoutType');
-      
-      console.log('DOW:', dow, 'Container:', container); // Debug
-      
-      if (!container) {
-        console.log('Workout container not found');
-        return;
-      }
-      
-      container.innerHTML = '';
-      const exercises = WORKOUT_EXERCISES[dow] || [];
-      const schedule = WEEKLY_SCHEDULE[dow];
-      
-      console.log('Exercises found:', exercises.length); // Debug
-      
-      // Update workout type indicator
-      if (workoutTypeSpan) {
-        workoutTypeSpan.textContent = schedule.type;
-      }
-      
-      if (exercises.length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center; padding:20px;">No workout for this day</div>';
-        return;
-      }
-      
-      // Load existing workout data with safety checks
-      const s = loadState();
-      const dk = todayKey();
-      
-      // Ensure workouts object exists
-      if (!s.workouts) {
-        s.workouts = {};
-        saveState(s);
-      }
-      
-      const workoutData = s.workouts[dk] || {};
-      console.log('Loaded workout data for', dk, ':', workoutData); // Debug
-      
-      console.log('Creating', exercises.length, 'exercise rows'); // Debug
-      
-      exercises.forEach((exercise, index) => {
-        const row = document.createElement('div');
-        row.className = 'workout-row';
-        row.id = `workout-row-${index}`;
-        
-        const currentExercise = workoutData[`ex_${index}`] || '';
-        const currentWeight = workoutData[`wt_${index}`] || '';
-        
-        console.log(`Row ${index}: exercise="${currentExercise}", weight="${currentWeight}"`); // Debug
-        
-        // Mark as completed if both exercise and weight are filled
-        if (currentExercise && currentWeight) {
-          row.classList.add('completed');
-        }
-        
-        // Create dropdown options
-        const optionsHTML = exercise.options.map(option => 
-          `<option value="${option}" ${option === currentExercise ? 'selected' : ''}>${option}</option>`
-        ).join('');
-        
-        row.innerHTML = `
-          <select class="exercise-select" id="exercise-${index}">
-            <option value="">${exercise.category}</option>
-            ${optionsHTML}
-          </select>
-          <input type="number" class="weight-input" id="weight-${index}" 
-                 placeholder="lbs" step="0.5" min="0" value="${currentWeight}" />
-          <div class="save-indicator" id="save-${index}">
-            <span id="save-text-${index}">Saved ✓</span>
-            <span id="pr-badge-${index}"></span>
-          </div>
-        `;
-        
-        container.appendChild(row);
-        console.log('Added row', index); // Debug
-        
-        // Add event listeners after elements are in DOM
-        const exerciseSelect = document.getElementById(`exercise-${index}`);
-        const weightInput = document.getElementById(`weight-${index}`);
-        
-        if (exerciseSelect && weightInput) {
-          exerciseSelect.addEventListener('change', () => {
-            console.log('Exercise changed:', index, exerciseSelect.value); // Debug
-            saveWorkoutData(index);
-          });
-          weightInput.addEventListener('input', () => {
-            console.log('Weight changed:', index, weightInput.value); // Debug
-            saveWorkoutData(index);
-          });
-        }
-      });
-      
-      console.log('Workout section rendered successfully'); // Debug
-    }
-
-    function saveWorkoutData(index) {
-      console.log('saveWorkoutData called for index:', index); // Debug
-      
-      const exerciseSelect = document.getElementById(`exercise-${index}`);
-      const weightInput = document.getElementById(`weight-${index}`);
-      const row = document.getElementById(`workout-row-${index}`);
-      
-      if (!exerciseSelect || !weightInput) {
-        console.log('Elements not found for index:', index);
-        return;
-      }
-      
-      const exercise = exerciseSelect.value;
-      const weight = parseFloat(weightInput.value) || 0;
-      
-      console.log('Saving:', exercise, weight); // Debug
-      
-      const s = loadState();
-      const dk = todayKey();
-      
-      // Initialize workout data with safety checks
-      if (!s.workouts) {
-        s.workouts = {};
-        console.log('Initialized workouts object');
-      }
-      if (!s.workouts[dk]) {
-        s.workouts[dk] = {};
-        console.log('Initialized workout data for', dk);
-      }
-      
-      // Save data
-      s.workouts[dk][`ex_${index}`] = exercise;
-      s.workouts[dk][`wt_${index}`] = weight;
-      
-      console.log('Saved to workouts[' + dk + ']:', s.workouts[dk]); // Debug
-      
-      // Check for PR and save
-      if (exercise && weight > 0) {
-        const exerciseKey = exercise.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        if (!s.prs) s.prs = {};
-        
-        let isPR = false;
-        if (!s.prs[exerciseKey] || weight > (s.prs[exerciseKey].maxWeight || 0)) {
-          s.prs[exerciseKey] = {
-            name: exercise,
-            maxWeight: weight,
-            date: dk
-          };
-          isPR = true;
-          console.log('New PR detected:', exercise, weight);
-        }
-        
-        // Update row visual state
-        if (row) {
-          row.classList.add('completed');
-        }
-        
-        // Show PR feedback
-        if (isPR) {
-          const prBadge = document.getElementById(`pr-badge-${index}`);
-          if (prBadge) {
-            prBadge.innerHTML = '<span class="pr-indicator">PR!</span>';
-            setTimeout(() => {
-              prBadge.innerHTML = '';
-            }, 5000);
-          }
-          triggerSuccessFeedback(`New PR! ${exercise}: ${weight} lbs 🏆`);
-        }
-        
-        // Show saved indicator
-        const saveIndicator = document.getElementById(`save-${index}`);
-        if (saveIndicator) {
-          saveIndicator.classList.add('show');
-          setTimeout(() => {
-            saveIndicator.classList.remove('show');
-          }, 2000);
-        }
-      } else if (row) {
-        row.classList.remove('completed');
-      }
-      
-      saveState(s);
-      console.log('Data saved successfully');
     }
 
     // ---- Dialog Event Listeners ----
@@ -2167,7 +1895,7 @@
       
       // Protein goal achievement celebration
       const originalUpdateProteinRing = updateProteinRing;
-      updateProteinRing = function() {
+      window.updateProteinRing = function() {
         const s = loadState();
         const dk = todayKey();
         const current = s.logs[dk]?.protein || 0;
@@ -2193,11 +1921,27 @@
       document.getElementById('proteinGoalInput').placeholder = s.proteinGoal || 120;
     }
 
+    // ---- App Lifecycle Functions ----
+    
+    // Check for day changes periodically
+    function startDayChangeMonitoring() {
+      // Check every minute
+      setInterval(checkForDayChange, 60000);
+      
+      // Also check when app becomes visible again
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkForDayChange();
+        }
+      });
+    }
+
     // Init
     initDefaults(); 
     setPickerToToday(); 
     initProteinGoal();
     initPremiumFeatures();
+    startDayChangeMonitoring();
     renderAll(); 
     renderWeek(); 
     renderProgress();
