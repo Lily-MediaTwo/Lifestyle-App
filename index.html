@@ -1114,6 +1114,19 @@
     function todayKey(){ return new Date().toISOString().slice(0,10) }
     function getDow(){ return Number(document.querySelector('.chip[aria-pressed="true"]')?.dataset.day ?? new Date().getDay()) }
     
+    // Get the date key for the currently selected day in the picker
+    function getSelectedDateKey() {
+      const dow = getDow();
+      const today = new Date();
+      const currentDow = today.getDay();
+      const daysOffset = dow - currentDow;
+      
+      const selectedDate = new Date(today);
+      selectedDate.setDate(today.getDate() + daysOffset);
+      
+      return selectedDate.toISOString().slice(0,10);
+    }
+    
     function toHuman(hm){ 
       if(!hm||hm.includes(':')===false) return hm; 
       const [h,m]=hm.split(':').map(Number); 
@@ -1174,8 +1187,8 @@
     // ---- Protein Ring Functions ----
     function updateProteinRing() {
       const s = loadState();
-      const dk = todayKey(); // Always use current day
-      const current = s.logs[dk]?.protein || 0; // Default to 0 for new day
+      const dk = getSelectedDateKey(); // Use selected day instead of always today
+      const current = s.logs[dk]?.protein || 0; // Default to 0 for any day
       const goal = s.proteinGoal || 120;
       const percentage = Math.min((current / goal) * 100, 100);
       
@@ -1202,9 +1215,9 @@
 
     function addQuickProtein(amount) {
       const s = loadState();
-      const dk = todayKey(); // Always use current day
+      const dk = getSelectedDateKey(); // Use selected day instead of always today
       if (!s.logs[dk]) s.logs[dk] = {};
-      const current = s.logs[dk].protein || 0; // Default to 0 for new day
+      const current = s.logs[dk].protein || 0; // Default to 0 for any day
       s.logs[dk].protein = current + amount;
       saveState(s);
       updateProteinRing();
@@ -1219,8 +1232,8 @@
     // ---- Water Functions ----
     function addQuickWater(glasses) {
       const s = loadState();
-      const dk = todayKey(); // Always use current day
-      const current = s.water[dk] || 0; // Default to 0 for new day
+      const dk = getSelectedDateKey(); // Use selected day instead of always today
+      const current = s.water[dk] || 0; // Default to 0 for any day
       const newAmount = Math.max(0, Math.min(current + glasses, s.waterGoal));
       s.water[dk] = newAmount;
       saveState(s);
@@ -1230,8 +1243,8 @@
 
     function renderWater(){
       const s=loadState(); 
-      const dk=todayKey(); // Always use current day
-      const cur=s.water[dk]||0; // Default to 0 for new day
+      const dk=getSelectedDateKey(); // Use selected day instead of always today
+      const cur=s.water[dk]||0; // Default to 0 for any day
       document.getElementById('waterCurrent').textContent=cur;
       
       const wrap=document.getElementById('waterDrops'); wrap.innerHTML='';
@@ -1336,7 +1349,11 @@
 
     function renderTimeline(){
       const timeline=document.getElementById('timeline'); timeline.innerHTML='';
-      const s=loadState(); const dk=todayKey(); const checks=s.checks[dk]||{}; const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow].schedule;
+      const s=loadState(); 
+      const dk=getSelectedDateKey(); // Use selected day instead of always today
+      const checks=s.checks[dk]||{}; 
+      const dow=getDow(); 
+      const plan=WEEKLY_SCHEDULE[dow].schedule;
       
       plan.forEach(item=>{
         const li=document.createElement('li'); const div=document.createElement('div'); div.className='task';
@@ -1371,10 +1388,24 @@
     }
 
     function updateProgress(){
-      const s=loadState(); const dk=todayKey(); const dow=getDow(); const plan=WEEKLY_SCHEDULE[dow];
-      const checks=s.checks[dk]||{}; const completed=Object.values(checks).filter(Boolean).length; const total=plan.schedule.length; const water=(s.water[dk]||0)/(s.waterGoal||8);
+      const s=loadState(); 
+      const dk=getSelectedDateKey(); // Use selected day for checking completion
+      const dow=getDow(); 
+      const plan=WEEKLY_SCHEDULE[dow];
+      const checks=s.checks[dk]||{}; 
+      const completed=Object.values(checks).filter(Boolean).length; 
+      const total=plan.schedule.length; 
+      const water=(s.water[dk]||0)/(s.waterGoal||8);
       const pct=Math.min(1, (total?completed/total:0)*0.8 + water*0.2);
-      if(pct>=0.9 && !s._markedToday){ s._markedToday=true; s.streak=(s.streak||0)+1; saveState(s); document.getElementById('streakCount').textContent=s.streak; }
+      
+      // Only update streak for actual today, not when viewing other days
+      const actualToday = todayKey();
+      if(dk === actualToday && pct>=0.9 && !s._markedToday){ 
+        s._markedToday=true; 
+        s.streak=(s.streak||0)+1; 
+        saveState(s); 
+        document.getElementById('streakCount').textContent=s.streak; 
+      }
     }
 
     // ---- Enhanced Workout Section with Different Metrics ----
@@ -1399,19 +1430,19 @@
         return;
       }
       
-      // Load existing workout data
+      // Load existing workout data for the SELECTED day, not always today
       const s = loadState();
-      const dk = todayKey();
+      const dk = getSelectedDateKey(); // Use selected day
       if (!s.workouts) s.workouts = {};
-      const workoutData = s.workouts[dk] || {};
+      const workoutData = s.workouts[dk] || {}; // This will be empty/blank if no data for that day
       
       exercises.forEach((exercise, index) => {
         const row = document.createElement('div');
         row.className = `workout-row ${exercise.type}`;
         row.id = `workout-row-${index}`;
         
-        const currentExercise = workoutData[`ex_${index}`] || '';
-        const currentValue = workoutData[`val_${index}`] || '';
+        const currentExercise = workoutData[`ex_${index}`] || ''; // Will be empty if no data
+        const currentValue = workoutData[`val_${index}`] || ''; // Will be empty if no data
         
         // Mark as completed if both exercise and value are filled
         if (currentExercise && currentValue) {
@@ -1498,7 +1529,7 @@
       }
       
       const s = loadState();
-      const dk = todayKey();
+      const dk = getSelectedDateKey(); // Use selected day instead of always today
       
       if (!s.workouts) s.workouts = {};
       if (!s.workouts[dk]) s.workouts[dk] = {};
