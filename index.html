@@ -432,6 +432,64 @@
     .today-exercise-item{display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:color-mix(in oklab, var(--accent) 8%, transparent); border-radius:6px; font-size:0.9rem}
     .quick-add-container{display:flex; gap:6px; margin-top:8px}
     
+    /* Structured Workout */
+    .structured-workout{display:grid; gap:10px; margin-top:8px}
+    .workout-row{
+      display:grid; grid-template-columns: 1fr 100px 60px; gap:8px; align-items:center;
+      padding:10px; background:color-mix(in oklab, var(--accent) 5%, transparent); 
+      border-radius:8px; transition: all 0.2s ease;
+    }
+    .workout-row:hover {
+      background:color-mix(in oklab, var(--accent) 8%, transparent);
+    }
+    .workout-row.completed {
+      background:color-mix(in oklab, var(--success) 10%, transparent);
+      border-left: 3px solid var(--success);
+    }
+    .exercise-select{
+      padding:6px 8px; border:1px solid color-mix(in oklab, black 10%, transparent); 
+      border-radius:6px; background:var(--white); font-size:0.9rem;
+      transition: all 0.2s ease; width: 100%;
+    }
+    .exercise-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent);
+    }
+    .weight-input{
+      padding:6px 8px; border:1px solid color-mix(in oklab, black 10%, transparent); 
+      border-radius:6px; background:var(--white); text-align:center; 
+      font-size:0.9rem; transition: all 0.2s ease; width: 100%;
+    }
+    .weight-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent);
+    }
+    .save-indicator{
+      font-size:0.75rem; color:var(--success); font-weight:600;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .save-indicator.show {
+      opacity: 1;
+    }
+    .pr-indicator{
+      background:var(--gradient-primary); color:white; 
+      padding:2px 6px; border-radius:12px; font-size:0.7rem; font-weight:600;
+      animation: bounce 0.5s ease;
+    }
+    
+    /* Dark mode fixes for selects and inputs */
+    @media (prefers-color-scheme: dark) {
+      .exercise-select, .weight-input {
+        background: var(--bg) !important;
+        color: var(--ink) !important;
+        border-color: var(--muted) !important;
+      }
+      .exercise-select option {
+        background: var(--bg) !important;
+        color: var(--ink) !important;
+      }
+    }
+    
     /* Achievement Badges */
     .achievement-badge{
       display:inline-flex; align-items:center; gap:4px;
@@ -552,10 +610,10 @@
 
     <section class="card" style="margin:18px 4px">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
-        <h3 style="margin:0">Quick Exercise Log</h3>
-        <button class="btn small" onclick="showQuickExerciseDialog()">+ Log Lift</button>
+        <h3 style="margin:0">Today's Workout</h3>
+        <span id="workoutType" class="muted" style="font-size:0.85rem"></span>
       </div>
-      <div id="todayExercises" class="today-exercises"></div>
+      <div id="workoutSection" class="structured-workout"></div>
     </section>
   </main>
 
@@ -811,26 +869,59 @@
     </form>
   </dialog>
 
-  <!-- Quick Exercise Dialog -->
-  <dialog id="quickExerciseDialog">
-    <form method="dialog" onsubmit="saveQuickExercise(); return false;">
-      <h3>Quick Exercise Log</h3>
-      <div class="row" style="margin:8px 0">
-        <label for="quickExerciseName">Exercise:</label>
-        <input id="quickExerciseName" type="text" required placeholder="e.g., Bench Press">
-      </div>
-      <div class="row" style="margin:8px 0">
-        <label for="quickExerciseWeight">Max Weight (lbs):</label>
-        <input id="quickExerciseWeight" type="number" required placeholder="135" step="0.5">
-      </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px">
-        <button type="button" class="btn" onclick="closeQuickExerciseDialog()">Cancel</button>
-        <button type="submit" class="btn primary">Log Exercise</button>
-      </div>
-    </form>
-  </dialog>
-
   <script>
+    // Define exercise data first, before any functions
+    const WORKOUT_EXERCISES = {
+      0: [ // Sunday - Rest
+        { category: "Light Movement", options: ["Gentle Walk", "Stretching", "Tai Chi", "Restorative Yoga"] },
+        { category: "Recovery", options: ["Meditation", "Breathing Work", "Self-Massage", "Sauna/Bath"] },
+        { category: "Leisure", options: ["Reading", "Hobbies", "Social Time", "Nature Walk"] }
+      ],
+      1: [ // Monday - Full Body Strength
+        { category: "Primary Squat", options: ["Back Squat", "Front Squat", "Goblet Squat", "Bulgarian Split Squat"] },
+        { category: "Primary Push", options: ["Bench Press", "Dumbbell Press", "Incline Press", "Push-ups"] },
+        { category: "Primary Pull", options: ["Bent-Over Row", "T-Bar Row", "One-Arm DB Row", "Cable Row"] },
+        { category: "Hip Hinge", options: ["Romanian Deadlift", "Hip Thrusts", "Kettlebell Swings", "Good Mornings"] },
+        { category: "Overhead", options: ["Overhead Press", "Arnold Press", "Pike Push-ups", "Landmine Press"] },
+        { category: "Core", options: ["Plank Hold", "Dead Bug", "Pallof Press", "Bird Dog"] }
+      ],
+      2: [ // Tuesday - HIIT + Core
+        { category: "HIIT Cardio", options: ["Sprint Intervals", "Battle Ropes", "Burpees", "High Knees"] },
+        { category: "Core Flexion", options: ["Hanging Knee Raises", "Leg Raises", "V-ups", "Bicycle Crunches"] },
+        { category: "Anti-Extension", options: ["Plank", "Dead Bug", "Ab Wheel", "Hollow Hold"] },
+        { category: "Core Rotation", options: ["Russian Twists", "Wood Chops", "Cable Twists", "Medicine Ball Slams"] },
+        { category: "Anti-Lateral", options: ["Side Plank", "Suitcase Carry", "Single-Arm Farmer's Walk", "Pallof Press"] }
+      ],
+      3: [ // Wednesday - Upper Strength
+        { category: "Primary Pull", options: ["Pull-ups", "Lat Pulldown", "Cable Row", "Chest-Supported Row"] },
+        { category: "Primary Push", options: ["Incline Press", "Overhead Press", "Dips", "Close-Grip Bench"] },
+        { category: "Pull Isolation", options: ["Face Pulls", "Reverse Flyes", "Shrugs", "Cable Pull-aparts"] },
+        { category: "Push Isolation", options: ["Lateral Raises", "Tricep Extensions", "Chest Flyes", "Front Raises"] },
+        { category: "Arms", options: ["Bicep Curls", "Hammer Curls", "Tricep Dips", "Cable Curls"] },
+        { category: "Cardio", options: ["20min Rowing", "Bike", "Incline Walk", "Elliptical"] }
+      ],
+      4: [ // Thursday - HIIT
+        { category: "Power", options: ["Jump Squats", "Box Jumps", "Explosive Push-ups", "Burpee Broad Jumps"] },
+        { category: "Cardio", options: ["High Knees", "Jumping Jacks", "Sprint Intervals", "Mountain Climbers"] },
+        { category: "Strength", options: ["Thrusters", "Man Makers", "Turkish Get-ups", "Kettlebell Swings"] },
+        { category: "Finisher", options: ["Plank Jacks", "Bear Crawls", "Jump Rope", "Burpee Ladder"] }
+      ],
+      5: [ // Friday - Lower Strength
+        { category: "Hip Hinge", options: ["Deadlift", "Romanian Deadlift", "Trap Bar Deadlift", "Sumo Deadlift"] },
+        { category: "Squat", options: ["Back Squat", "Front Squat", "Hack Squat", "Leg Press"] },
+        { category: "Unilateral", options: ["Walking Lunges", "Bulgarian Split Squats", "Single-Leg RDL", "Step-ups"] },
+        { category: "Glutes", options: ["Hip Thrusts", "Glute Bridges", "Clamshells", "Cable Kickbacks"] },
+        { category: "Calves", options: ["Standing Calf Raises", "Seated Calf Raises", "Calf Press", "Jump Rope"] },
+        { category: "Cardio", options: ["20-30min Stair Climber", "Bike", "Incline Walk", "Rowing"] }
+      ],
+      6: [ // Saturday - Active Recovery
+        { category: "Light Cardio", options: ["20-30min Walk", "Easy Bike", "Swimming", "Yoga Flow"] },
+        { category: "Mobility", options: ["Stretching Session", "Foam Rolling", "Yoga", "Pilates"] },
+        { category: "Stability", options: ["Balance Work", "Light Core", "Breathing Exercises", "Meditation"] },
+        { category: "Optional", options: ["Recreational Activity", "Light Sports", "Dancing", "Hiking"] }
+      ]
+    };
+
     const WEEKLY_SCHEDULE = {
       0:{type:"Rest Day",workoutType:"rest",dose:false,schedule:[
         {key:"hydrate",time:"08:00",title:"Wake & Hydrate",note:"16–20 oz water"},
@@ -1538,11 +1629,11 @@
     function calculatePRs(exercises) {
       const prs = {};
       
-      Object.values(exercises).forEach(exercise => {
+      Object.entries(exercises).forEach(([key, exercise]) => {
         const { name, maxWeight } = exercise;
-        const exerciseId = name.toLowerCase().replace(/\s+/g, '_');
+        const exerciseKey = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         
-        prs[exerciseId] = {
+        prs[exerciseKey] = {
           name: name,
           maxWeight: maxWeight,
           date: todayKey()
@@ -1608,7 +1699,7 @@
         
         const currentTime = getTimeForItem(dow, item.key, item.time);
         const lbl=document.createElement('label'); lbl.setAttribute('for', id);
-        lbl.innerHTML = `<div class="task-time" onclick="editTime(${dow}, '${item.key}', '${currentTime}')">${toHuman(currentTime)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>${item.details?`<div class="task-details"><div class="workout-details"><strong>Workout Details:</strong><br>${item.details}</div></div>`:''}`;
+        lbl.innerHTML = `<div class="task-time" onclick="editTime(${dow}, '${item.key}', '${currentTime}')">${toHuman(currentTime)}</div><div class="task-title">${item.title}</div><div class="task-note">${item.note||''}</div>`;
         div.append(cb,lbl); li.append(div); timeline.append(li);
       });
     }
@@ -1807,7 +1898,8 @@
     document.querySelectorAll('.chip').forEach(chip=>{
       chip.addEventListener('click', ()=>{
         document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));
-        chip.setAttribute('aria-pressed','true'); renderAll();
+        chip.setAttribute('aria-pressed','true'); 
+        renderAll();
       });
     });
 
@@ -1821,8 +1913,194 @@
       renderTimeline(); 
       renderWater(); 
       updateProteinRing();
-      renderTodayExercises();
+      renderWorkoutSection();
       updateProgress(); 
+    }
+
+    // ---- Workout Section Rendering ----
+    function renderWorkoutSection() {
+      console.log('renderWorkoutSection called'); // Debug
+      
+      const dow = getDow();
+      const container = document.getElementById('workoutSection');
+      const workoutTypeSpan = document.getElementById('workoutType');
+      
+      console.log('DOW:', dow, 'Container:', container); // Debug
+      
+      if (!container) {
+        console.log('Workout container not found');
+        return;
+      }
+      
+      container.innerHTML = '';
+      const exercises = WORKOUT_EXERCISES[dow] || [];
+      const schedule = WEEKLY_SCHEDULE[dow];
+      
+      console.log('Exercises found:', exercises.length); // Debug
+      
+      // Update workout type indicator
+      if (workoutTypeSpan) {
+        workoutTypeSpan.textContent = schedule.type;
+      }
+      
+      if (exercises.length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center; padding:20px;">No workout for this day</div>';
+        return;
+      }
+      
+      // Load existing workout data with safety checks
+      const s = loadState();
+      const dk = todayKey();
+      
+      // Ensure workouts object exists
+      if (!s.workouts) {
+        s.workouts = {};
+        saveState(s);
+      }
+      
+      const workoutData = s.workouts[dk] || {};
+      console.log('Loaded workout data for', dk, ':', workoutData); // Debug
+      
+      console.log('Creating', exercises.length, 'exercise rows'); // Debug
+      
+      exercises.forEach((exercise, index) => {
+        const row = document.createElement('div');
+        row.className = 'workout-row';
+        row.id = `workout-row-${index}`;
+        
+        const currentExercise = workoutData[`ex_${index}`] || '';
+        const currentWeight = workoutData[`wt_${index}`] || '';
+        
+        console.log(`Row ${index}: exercise="${currentExercise}", weight="${currentWeight}"`); // Debug
+        
+        // Mark as completed if both exercise and weight are filled
+        if (currentExercise && currentWeight) {
+          row.classList.add('completed');
+        }
+        
+        // Create dropdown options
+        const optionsHTML = exercise.options.map(option => 
+          `<option value="${option}" ${option === currentExercise ? 'selected' : ''}>${option}</option>`
+        ).join('');
+        
+        row.innerHTML = `
+          <select class="exercise-select" id="exercise-${index}">
+            <option value="">${exercise.category}</option>
+            ${optionsHTML}
+          </select>
+          <input type="number" class="weight-input" id="weight-${index}" 
+                 placeholder="lbs" step="0.5" min="0" value="${currentWeight}" />
+          <div class="save-indicator" id="save-${index}">
+            <span id="save-text-${index}">Saved ✓</span>
+            <span id="pr-badge-${index}"></span>
+          </div>
+        `;
+        
+        container.appendChild(row);
+        console.log('Added row', index); // Debug
+        
+        // Add event listeners after elements are in DOM
+        const exerciseSelect = document.getElementById(`exercise-${index}`);
+        const weightInput = document.getElementById(`weight-${index}`);
+        
+        if (exerciseSelect && weightInput) {
+          exerciseSelect.addEventListener('change', () => {
+            console.log('Exercise changed:', index, exerciseSelect.value); // Debug
+            saveWorkoutData(index);
+          });
+          weightInput.addEventListener('input', () => {
+            console.log('Weight changed:', index, weightInput.value); // Debug
+            saveWorkoutData(index);
+          });
+        }
+      });
+      
+      console.log('Workout section rendered successfully'); // Debug
+    }
+
+    function saveWorkoutData(index) {
+      console.log('saveWorkoutData called for index:', index); // Debug
+      
+      const exerciseSelect = document.getElementById(`exercise-${index}`);
+      const weightInput = document.getElementById(`weight-${index}`);
+      const row = document.getElementById(`workout-row-${index}`);
+      
+      if (!exerciseSelect || !weightInput) {
+        console.log('Elements not found for index:', index);
+        return;
+      }
+      
+      const exercise = exerciseSelect.value;
+      const weight = parseFloat(weightInput.value) || 0;
+      
+      console.log('Saving:', exercise, weight); // Debug
+      
+      const s = loadState();
+      const dk = todayKey();
+      
+      // Initialize workout data with safety checks
+      if (!s.workouts) {
+        s.workouts = {};
+        console.log('Initialized workouts object');
+      }
+      if (!s.workouts[dk]) {
+        s.workouts[dk] = {};
+        console.log('Initialized workout data for', dk);
+      }
+      
+      // Save data
+      s.workouts[dk][`ex_${index}`] = exercise;
+      s.workouts[dk][`wt_${index}`] = weight;
+      
+      console.log('Saved to workouts[' + dk + ']:', s.workouts[dk]); // Debug
+      
+      // Check for PR and save
+      if (exercise && weight > 0) {
+        const exerciseKey = exercise.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        if (!s.prs) s.prs = {};
+        
+        let isPR = false;
+        if (!s.prs[exerciseKey] || weight > (s.prs[exerciseKey].maxWeight || 0)) {
+          s.prs[exerciseKey] = {
+            name: exercise,
+            maxWeight: weight,
+            date: dk
+          };
+          isPR = true;
+          console.log('New PR detected:', exercise, weight);
+        }
+        
+        // Update row visual state
+        if (row) {
+          row.classList.add('completed');
+        }
+        
+        // Show PR feedback
+        if (isPR) {
+          const prBadge = document.getElementById(`pr-badge-${index}`);
+          if (prBadge) {
+            prBadge.innerHTML = '<span class="pr-indicator">PR!</span>';
+            setTimeout(() => {
+              prBadge.innerHTML = '';
+            }, 5000);
+          }
+          triggerSuccessFeedback(`New PR! ${exercise}: ${weight} lbs 🏆`);
+        }
+        
+        // Show saved indicator
+        const saveIndicator = document.getElementById(`save-${index}`);
+        if (saveIndicator) {
+          saveIndicator.classList.add('show');
+          setTimeout(() => {
+            saveIndicator.classList.remove('show');
+          }, 2000);
+        }
+      } else if (row) {
+        row.classList.remove('completed');
+      }
+      
+      saveState(s);
+      console.log('Data saved successfully');
     }
 
     // ---- Dialog Event Listeners ----
@@ -1837,8 +2115,6 @@
         saveNewExercise();
       }
     });
-
-    // Note: quickExerciseDialog uses form onsubmit handler, no close event listener needed
 
     // Initialize premium visual features
     function initPremiumFeatures() {
