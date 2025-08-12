@@ -1,4 +1,4 @@
-# 🏋️ Enhanced 4-Week Fat Loss Tracker
+# 🏋️ Enhanced Fitness Tracker
 
 A comprehensive, nature-themed fitness tracker designed for serious fat loss and strength building. Features intelligent day-switching, adaptive workout metrics, and beautiful progress visualization.
 
