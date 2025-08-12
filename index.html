@@ -32,6 +32,51 @@
       .tabbar{background:#0b100e;border-top-color:#1b2a24}
       .card,.timeline li{border-color:#1b2a24}
       .progress-bar{background:#1b2a24}
+      
+      /* Ensure all text is light in dark mode */
+      body, h1, h2, h3, h4, h5, h6, p, span, div, label, button, input {
+        color: var(--ink) !important;
+      }
+      
+      /* Specific dark mode text overrides */
+      .muted { color: var(--muted) !important; }
+      .day-name, .task-time, .protein-ring-value { color: var(--accent) !important; }
+      .btn.primary { color: #fff !important; }
+      .btn { color: var(--ink) !important; }
+      .exercise-name { color: var(--accent) !important; }
+      .stat-number { color: var(--accent) !important; }
+      
+      /* Input fields in dark mode */
+      .protein-input, .exercise-weight-input, .set-input, input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+        background: var(--bg) !important;
+        color: var(--ink) !important;
+        border-color: var(--muted) !important;
+      }
+      
+      /* Dialog backgrounds */
+      dialog {
+        background: var(--card) !important;
+        color: var(--ink) !important;
+      }
+      
+      /* Make sure placeholder text is visible */
+      ::placeholder {
+        color: var(--muted) !important;
+        opacity: 0.8 !important;
+      }
+      
+      /* Table text */
+      .row div {
+        color: var(--ink) !important;
+      }
+      
+      /* Task text */
+      .task-title, .task-note {
+        color: var(--ink) !important;
+      }
+      .task-note {
+        color: var(--muted) !important;
+      }
     }
     
     /* Premium Animations & Transitions */
